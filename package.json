@@ -11,15 +11,12 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "export-questions": "tsx scripts/export-questions.ts",
-    "seed:firestore": "node scripts/seed-questions-firestore.js"
+    "export-questions": "tsx scripts/export-questions.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
-    "firebase": "^11.0.2",
-    "firebase-admin": "^13.10.0",
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",
     "next": "14.2.18",

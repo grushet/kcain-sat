@@ -3,7 +3,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth";
-import { adminAuth } from "@/lib/firebase-admin";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -35,54 +34,10 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
-    // Firebase Google Sign-In: client pops up Firebase auth, sends us the ID token
-    CredentialsProvider({
-      id: "firebase-google",
-      name: "Google",
-      credentials: {
-        firebaseToken: { label: "Firebase Token", type: "text" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.firebaseToken) return null;
-        try {
-          // Verify the Firebase ID token with the kalshi-nono project
-          const decoded = await adminAuth.verifyIdToken(credentials.firebaseToken);
-          if (!decoded.email) return null;
-
-          const email = decoded.email.toLowerCase();
-          const name = decoded.name ?? decoded.email.split("@")[0];
-          const image = decoded.picture ?? null;
-
-          // Find or create user
-          let user = await prisma.user.findUnique({ where: { email } });
-          if (!user) {
-            user = await prisma.user.create({
-              data: { email, name, image, emailVerified: new Date() },
-            });
-          } else if (!user.emailVerified) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { emailVerified: new Date(), name: name ?? user.name, image: image ?? user.image },
-            });
-          }
-
-          return { id: user.id, email: user.email, name: user.name, image: user.image };
-        } catch (err) {
-          console.error("[firebase-google] Token verification failed:", err);
-          return null;
-        }
-      },
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-
-    // Legacy NextAuth Google OAuth (only active if env vars are set)
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          }),
-        ]
-      : []),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {

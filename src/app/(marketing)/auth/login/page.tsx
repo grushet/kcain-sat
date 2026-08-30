@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { KcainLogo } from "@/components/layout/KcainLogo";
-import { auth, googleProvider } from "@/lib/firebase-client";
-import { signInWithPopup } from "firebase/auth";
+
+// Email/password sign-in is dormant until an email provider (Resend, SES, etc.)
+// is configured — flip this on once EMAIL_FROM / RESEND_API_KEY are set.
+const EMAIL_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_EMAIL_AUTH === "true";
 
 function GoogleIcon() {
   return (
@@ -49,27 +51,14 @@ function LoginForm() {
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
     setError("");
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const firebaseToken = await result.user.getIdToken();
-      const res = await signIn("firebase-google", {
-        firebaseToken,
-        redirect: false,
-      });
-      if (res?.error) {
-        setError("Google sign-in failed. Please try again.");
-        setGoogleLoading(false);
-        return;
-      }
-      router.push("/dashboard");
-      router.refresh();
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code;
-      if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
-        setError("Google sign-in failed. Please try again.");
-      }
+    const res = await signIn("google", { redirect: false, callbackUrl: "/dashboard" });
+    if (res?.error) {
+      setError("Google sign-in failed. Please try again.");
       setGoogleLoading(false);
+      return;
     }
+    router.push("/dashboard");
+    router.refresh();
   }
 
   return (
@@ -98,76 +87,81 @@ function LoginForm() {
           {googleLoading ? "Redirecting…" : "Continue with Google"}
         </motion.button>
 
-        <div className="relative mb-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-sat-gray-200 dark:border-sat-gray-600" />
-          </div>
-          <div className="relative flex justify-center text-xs text-sat-gray-400 dark:text-sat-gray-500">
-            <span className="bg-white dark:bg-sat-gray-800 px-3">or continue with email</span>
-          </div>
-        </div>
-
-        <p className="text-xs text-sat-gray-500 dark:text-sky-300 text-center mb-4">New? Check your email for a verification link before logging in.</p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-xl bg-sat-crimson/10 text-sat-crimson text-sm"
-            >
-              {error}
-            </motion.div>
-          )}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-sat-gray-700 dark:text-sky-200 mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-xl border border-sat-gray-200 dark:border-sat-gray-600 dark:bg-sat-gray-700 dark:text-white focus:ring-2 focus:ring-sat-primary dark:focus:ring-sky-500 focus:border-sat-primary outline-none transition"
-              placeholder="you@example.com"
-            />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label htmlFor="password" className="block text-sm font-medium text-sat-gray-700 dark:text-sky-200">
-                Password
-              </label>
-              <Link href="/auth/forgot-password" className="text-xs text-sat-primary font-medium hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-xl border border-sat-gray-200 dark:border-sat-gray-600 dark:bg-sat-gray-700 dark:text-white focus:ring-2 focus:ring-sat-primary dark:focus:ring-sky-500 outline-none transition"
-            />
-          </div>
-          <motion.button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3 disabled:opacity-60 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 rounded-xl bg-sat-crimson/10 text-sat-crimson text-sm mb-4"
           >
-            {loading ? "Signing in..." : "Log in"}
-          </motion.button>
-        </form>
+            {error}
+          </motion.div>
+        )}
 
-        <p className="mt-6 text-center text-sm text-sat-gray-600">
-          Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="text-sat-primary font-medium hover:underline">
-            Sign up
-          </Link>
-        </p>
+        {EMAIL_AUTH_ENABLED && (
+          <>
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-sat-gray-200 dark:border-sat-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-xs text-sat-gray-400 dark:text-sat-gray-500">
+                <span className="bg-white dark:bg-sat-gray-800 px-3">or continue with email</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-sat-gray-500 dark:text-sky-300 text-center mb-4">New? Check your email for a verification link before logging in.</p>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-sat-gray-700 dark:text-sky-200 mb-1">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-sat-gray-200 dark:border-sat-gray-600 dark:bg-sat-gray-700 dark:text-white focus:ring-2 focus:ring-sat-primary dark:focus:ring-sky-500 focus:border-sat-primary outline-none transition"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="password" className="block text-sm font-medium text-sat-gray-700 dark:text-sky-200">
+                    Password
+                  </label>
+                  <Link href="/auth/forgot-password" className="text-xs text-sat-primary font-medium hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-sat-gray-200 dark:border-sat-gray-600 dark:bg-sat-gray-700 dark:text-white focus:ring-2 focus:ring-sat-primary dark:focus:ring-sky-500 outline-none transition"
+                />
+              </div>
+              <motion.button
+                type="submit"
+                disabled={loading}
+                className="w-full btn-primary py-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                {loading ? "Signing in..." : "Log in"}
+              </motion.button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-sat-gray-600">
+              Don&apos;t have an account?{" "}
+              <Link href="/auth/signup" className="text-sat-primary font-medium hover:underline">
+                Sign up
+              </Link>
+            </p>
+          </>
+        )}
       </div>
     </motion.div>
   );
