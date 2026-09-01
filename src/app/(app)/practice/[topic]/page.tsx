@@ -127,6 +127,21 @@ export default function PracticeTopicPage() {
 
   const handleFinish = () => router.push("/practice");
 
+  // An unrecognised slug used to silently fall back to algebra questions under
+  // the raw slug as a heading, which looked like a real but mislabelled topic.
+  if (!Object.prototype.hasOwnProperty.call(TOPIC_MAP, topicSlug)) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <Link href="/practice" className="inline-flex items-center gap-2 text-sat-primary hover:underline mb-6">
+          <ArrowLeft className="w-4 h-4" /> Back to Practice
+        </Link>
+        <div className="card p-8 text-center text-sat-gray-600 dark:text-sat-gray-400">
+          That practice topic does not exist. Pick one from the practice page.
+        </div>
+      </div>
+    );
+  }
+
   if (questionsLoading || questions.length === 0) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -147,7 +162,7 @@ export default function PracticeTopicPage() {
       </Link>
 
       <p className="text-sm text-sat-gray-500 dark:text-sat-gray-400 mb-4">
-        This session: {questions.length} random questions — different every time you open this category.
+        This session: {questions.length} random questions, different every time you open this category.
       </p>
 
       <div className="flex flex-wrap gap-2 mb-4">

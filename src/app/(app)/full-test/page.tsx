@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileQuestion, Clock, Zap, AlertCircle, BookOpen, Calculator, ArrowRight, Loader2, ChevronRight, Check, X, Trophy, RefreshCw } from "lucide-react";
-import { estimateSectionScore } from "@/lib/scoring";
+import { estimateSectionScore, answersMatch } from "@/lib/scoring";
 
 // ─── Types 
 
@@ -26,6 +26,9 @@ interface CompletedModule {
   answers: (string | null)[];
 }
 
+/** Official digital SAT module lengths, in seconds. */
+const MODULE_SECONDS = { rw: 32 * 60, math: 35 * 60 };
+
 type Phase =
   | "intro"
   | "loading"
@@ -43,22 +46,22 @@ type Phase =
 // ─── Helpers 
 
 function calcScore(mod: CompletedModule): number {
-  return mod.questions.reduce((n, q, i) => {
-    const a = mod.answers[i];
-    if (!a) return n;
-    return q.correctAnswer.some(
-      (ca) => ca.trim().toLowerCase() === a.trim().toLowerCase()
-    )
-      ? n + 1
-      : n;
-  }, 0);
+  return mod.questions.reduce(
+    (n, q, i) => (isCorrect(q, mod.answers[i]) ? n + 1 : n),
+    0
+  );
+}
+
+function formatClock(total: number): string {
+  const safe = Math.max(0, total);
+  const m = Math.floor(safe / 60);
+  const sec = safe % 60;
+  return `${m}:${String(sec).padStart(2, "0")}`;
 }
 
 function isCorrect(q: TQuestion, answer: string | null): boolean {
   if (!answer) return false;
-  return q.correctAnswer.some(
-    (ca) => ca.trim().toLowerCase() === answer.trim().toLowerCase()
-  );
+  return q.correctAnswer.some((ca) => answersMatch(ca, answer));
 }
 
 async function fetchModuleQuestions(
@@ -71,12 +74,13 @@ async function fetchModuleQuestions(
   if (module === "2") p.set("harder", harder ? "true" : "false");
   if (excludeIds?.length) p.set("excludeIds", JSON.stringify(excludeIds));
   const r = await fetch(`/api/full-test?${p}`);
-  if (!r.ok) throw new Error("Failed to fetch questions from server");
-  const d = await r.json();
-  if (!d.questions?.length)
+  const d = await r.json().catch(() => null);
+  if (!r.ok || !d?.questions?.length) {
     throw new Error(
-      "No questions returned — Collegeboard may be temporarily unavailable"
+      d?.error ??
+        "No questions came back. Collegeboard may be temporarily unavailable."
     );
+  }
   return d.questions as TQuestion[];
 }
 
@@ -102,6 +106,7 @@ function DiffBadge({ d }: { d: string }) {
 export default function FullTestPage() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   // Pre-fetched module questions
   const [rw1Qs, setRw1Qs] = useState<TQuestion[]>([]);
@@ -124,11 +129,12 @@ export default function FullTestPage() {
 
   // ── Module helpers
 
-  function startModule(qs: TQuestion[]) {
+  function startModule(qs: TQuestion[], seconds: number) {
     setActiveQs(qs);
     setCurrentIdx(0);
     setAnswers(new Array(qs.length).fill(null));
     setPendingAns(null);
+    setSecondsLeft(seconds);
   }
 
   // ── Phase transitions
@@ -143,7 +149,7 @@ export default function FullTestPage() {
       ]);
       setRw1Qs(rw1);
       setMath1Qs(math1);
-      startModule(rw1);
+      startModule(rw1, MODULE_SECONDS.rw);
       setPhase("rw1");
     } catch (e) {
       setLoadError((e as Error).message);
@@ -152,22 +158,19 @@ export default function FullTestPage() {
   }
 
   function handleConfirmAnswer() {
-    if (!pendingAns?.trim()) return;
+    // An unanswered question is recorded as a skip. The real test lets you
+    // move on, and with a module clock running a student must not be trapped
+    // on a question they cannot answer.
     const updated = [...answers];
-    updated[currentIdx] = pendingAns;
+    updated[currentIdx] = pendingAns?.trim() ? pendingAns : null;
     setAnswers(updated);
-    
-    // Check if this is the last question
+
     if (currentIdx === activeQs.length - 1) {
-      // Finish the module after saving the last answer
-      setTimeout(() => {
-        if (phase === "rw1") finishRw1();
-        else if (phase === "rw2") finishRw2();
-        else if (phase === "math1") finishMath1();
-        else if (phase === "math2") finishMath2();
-      }, 0);
+      // Hand the freshly updated array straight to the finisher. Reading
+      // `answers` here instead would use the pre-update render's value and
+      // silently throw away the student's final answer of every module.
+      finishModule(updated);
     } else {
-      // Move to next question
       handleNextQuestion();
     }
   }
@@ -177,14 +180,30 @@ export default function FullTestPage() {
     setCurrentIdx((i) => i + 1);
   }
 
-  function completeModule(): CompletedModule {
-    return { questions: activeQs, answers };
+  /** Ends the active module using the given answers and advances the phase. */
+  function finishModule(finalAnswers: (string | null)[]) {
+    const done: CompletedModule = { questions: activeQs, answers: finalAnswers };
+    setSecondsLeft(null);
+
+    if (phase === "rw1") {
+      setRw1Done(done);
+      setPhase("rw1_done");
+    } else if (phase === "rw2") {
+      setRw2Done(done);
+      setPhase("math_intro");
+    } else if (phase === "math1") {
+      setMath1Done(done);
+      setPhase("math1_done");
+    } else if (phase === "math2") {
+      finishMath2(done);
+    }
   }
 
-  function finishRw1() {
-    const done = completeModule();
-    setRw1Done(done);
-    setPhase("rw1_done");
+  /** Called when a module timer runs out; keeps any answer already selected. */
+  function handleTimeUp() {
+    const finalAnswers = [...answers];
+    if (pendingAns?.trim()) finalAnswers[currentIdx] = pendingAns;
+    finishModule(finalAnswers);
   }
 
   async function handleContinueToRw2() {
@@ -196,7 +215,7 @@ export default function FullTestPage() {
     const excludeIds = rw1Done.questions.map((q) => q.externalId);
     try {
       const rw2 = await fetchModuleQuestions("rw", "2", harder, excludeIds);
-      startModule(rw2);
+      startModule(rw2, MODULE_SECONDS.rw);
       setPhase("rw2");
     } catch (e) {
       setLoadError((e as Error).message);
@@ -204,21 +223,9 @@ export default function FullTestPage() {
     }
   }
 
-  function finishRw2() {
-    const done = completeModule();
-    setRw2Done(done);
-    setPhase("math_intro");
-  }
-
   function handleStartMath1() {
-    startModule(math1Qs);
+    startModule(math1Qs, MODULE_SECONDS.math);
     setPhase("math1");
-  }
-
-  function finishMath1() {
-    const done = completeModule();
-    setMath1Done(done);
-    setPhase("math1_done");
   }
 
   async function handleContinueToMath2() {
@@ -230,7 +237,7 @@ export default function FullTestPage() {
     const excludeIds = math1Done.questions.map((q) => q.externalId);
     try {
       const math2 = await fetchModuleQuestions("math", "2", harder, excludeIds);
-      startModule(math2);
+      startModule(math2, MODULE_SECONDS.math);
       setPhase("math2");
     } catch (e) {
       setLoadError((e as Error).message);
@@ -238,16 +245,17 @@ export default function FullTestPage() {
     }
   }
 
-  function finishMath2() {
-    const done = completeModule();
+  function finishMath2(done: CompletedModule) {
     setMath2Done(done);
 
     // Save last test to localStorage for calendar integration
     if (rw1Done && rw2Done && math1Done) {
       const rwRaw = calcScore(rw1Done) + calcScore(rw2Done);
       const mathRaw = calcScore(math1Done) + calcScore(done);
-      const rwScaled = estimateSectionScore(rwRaw, 54, "reading_writing");
-      const mathScaled = estimateSectionScore(mathRaw, 44, "math");
+      const rwMax = rw1Done.questions.length + rw2Done.questions.length;
+      const mathMax = math1Done.questions.length + done.questions.length;
+      const rwScaled = estimateSectionScore(rwRaw, rwMax, "reading_writing");
+      const mathScaled = estimateSectionScore(mathRaw, mathMax, "math");
       try {
         window.localStorage.setItem(
           "cain:lastFullTest",
@@ -268,14 +276,6 @@ export default function FullTestPage() {
     setPhase("results");
   }
 
-  function handleFinishModule() {
-    // This is now redundant since handleConfirmAnswer handles finishing
-    if (phase === "rw1") finishRw1();
-    else if (phase === "rw2") finishRw2();
-    else if (phase === "math1") finishMath1();
-    else if (phase === "math2") finishMath2();
-  }
-
   function resetTest() {
     setPhase("intro");
     setLoadError(null);
@@ -289,6 +289,7 @@ export default function FullTestPage() {
     setMath1Done(null);
     setMath2Done(null);
     setExpandedId(null);
+    setSecondsLeft(null);
   }
 
   // ── Derived values for active module
@@ -297,6 +298,24 @@ export default function FullTestPage() {
   const isLastQ = currentIdx === activeQs.length - 1;
   const isMCQ = currentQ ? currentQ.type !== "spr" : true;
   const currentIsCorrect = currentQ ? isCorrect(currentQ, pendingAns) : false;
+  const inModule =
+    phase === "rw1" || phase === "rw2" || phase === "math1" || phase === "math2";
+
+  // Tick the module clock down once a second.
+  useEffect(() => {
+    if (!inModule || secondsLeft === null || secondsLeft <= 0) return;
+    const t = setTimeout(
+      () => setSecondsLeft((s) => (s === null ? null : s - 1)),
+      1000
+    );
+    return () => clearTimeout(t);
+  }, [inModule, secondsLeft]);
+
+  // Submit the module automatically when the clock runs out.
+  useEffect(() => {
+    if (inModule && secondsLeft === 0) handleTimeUp();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inModule, secondsLeft]);
 
   function moduleLabel(): string {
     if (phase === "rw1") return "Reading & Writing · Module 1";
@@ -322,7 +341,7 @@ export default function FullTestPage() {
           Full-Length Practice Test
         </h1>
         <p className="text-sat-gray-600 dark:text-sat-gray-400 mb-8">
-          98 real SAT questions pulled live from Collegeboard — randomized every time.
+          98 real SAT questions pulled live from Collegeboard, randomized every time.
         </p>
 
         {loadError && (
@@ -335,7 +354,7 @@ export default function FullTestPage() {
         )}
 
         <div className="card p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-xl bg-sky-50 dark:bg-sky-900/20 p-4">
               <div className="flex items-center gap-2 mb-1">
                 <BookOpen className="w-4 h-4 text-sky-600 dark:text-sky-400" />
@@ -358,7 +377,7 @@ export default function FullTestPage() {
 
           <ul className="space-y-1.5 text-sm text-sat-gray-600 dark:text-sat-gray-400">
             <li>• Module 2 difficulty adapts to your Module 1 score (≥70% → harder)</li>
-            <li>• Questions are shuffled — every test is unique</li>
+            <li>• Questions are shuffled, so every test is unique</li>
             <li>• See correct/incorrect per question as you go</li>
             <li>• Full explanations available in the results review</li>
           </ul>
@@ -401,15 +420,14 @@ export default function FullTestPage() {
         <Loader2 className="w-12 h-12 text-sat-primary animate-spin" />
         <p className="text-sat-gray-700 dark:text-sat-gray-300 font-medium">{msg}</p>
         <p className="text-xs text-sat-gray-400 dark:text-sat-gray-500 max-w-xs">
-          Fetching real questions from Collegeboard — this takes a moment.
+          Fetching real questions from Collegeboard. This takes a moment.
         </p>
       </div>
     );
   }
 
   // 3. Active module question view
-  const isModulePhase =
-    phase === "rw1" || phase === "rw2" || phase === "math1" || phase === "math2";
+  const isModulePhase = inModule;
 
   if (isModulePhase && currentQ) {
     const isMathModule = phase === "math1" || phase === "math2";
@@ -431,6 +449,18 @@ export default function FullTestPage() {
             </div>
             <div className="flex items-center gap-2">
               <DiffBadge d={currentQ.difficulty} />
+              {secondsLeft !== null && (
+                <span
+                  className={`text-sm font-semibold tabular-nums px-2 py-0.5 rounded-md ${
+                    secondsLeft <= 300
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                      : "bg-sat-gray-100 text-sat-gray-700 dark:bg-sat-gray-700 dark:text-sat-gray-200"
+                  }`}
+                  aria-label="Time remaining in this module"
+                >
+                  {formatClock(secondsLeft)}
+                </span>
+              )}
               <span className="text-sm text-sat-gray-500 dark:text-sat-gray-400">
                 {currentIdx + 1} / {activeQs.length}
               </span>
@@ -465,7 +495,7 @@ export default function FullTestPage() {
             <div className="card p-6 md:p-8">
               {/* Stem */}
               <div
-                className="text-sat-gray-900 dark:text-white mb-6 leading-relaxed [&_p]:mb-3 [&_strong]:font-semibold [&_em]:italic [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-sat-gray-200 [&_td]:p-2 [&_td]:text-sm [&_th]:border [&_th]:border-sat-gray-200 [&_th]:p-2 [&_th]:text-sm [&_th]:bg-sat-gray-50 dark:[&_th]:bg-sat-gray-700 [&_img]:inline-block [&_img]:max-h-8"
+                className="text-sat-gray-900 dark:text-white mb-6 leading-relaxed [&_p]:mb-3 [&_strong]:font-semibold [&_em]:italic [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-sat-gray-200 [&_td]:p-2 [&_td]:text-sm [&_th]:border [&_th]:border-sat-gray-200 [&_th]:p-2 [&_th]:text-sm [&_th]:bg-sat-gray-50 dark:[&_th]:bg-sat-gray-700 [&_img]:max-w-full [&_img]:h-auto"
                 dangerouslySetInnerHTML={{ __html: currentQ.stem }}
               />
 
@@ -496,7 +526,7 @@ export default function FullTestPage() {
                           {opt.key}
                         </span>
                         <div
-                          className="flex-1 text-sm text-sat-gray-800 dark:text-sat-gray-200 [&_p]:m-0 [&_img]:inline-block [&_img]:max-h-6"
+                          className="flex-1 text-sm text-sat-gray-800 dark:text-sat-gray-200 [&_p]:m-0 [&_img]:max-w-full [&_img]:h-auto"
                           dangerouslySetInnerHTML={{ __html: opt.text }}
                         />
                       </button>
@@ -527,19 +557,18 @@ export default function FullTestPage() {
                   <button
                     type="button"
                     onClick={handleConfirmAnswer}
-                    className="btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                    disabled={!pendingAns?.trim()}
+                    className="btn-primary flex items-center gap-2"
                   >
-                    Next <ChevronRight className="w-4 h-4" />
+                    {pendingAns?.trim() ? "Next" : "Skip"}{" "}
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
                   <motion.button
                     type="button"
-                    onClick={handleFinishModule}
-                    className="btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                    onClick={handleConfirmAnswer}
+                    className="btn-primary flex items-center gap-2"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    disabled={!pendingAns?.trim()}
                   >
                     Finish Module <ChevronRight className="w-4 h-4" />
                   </motion.button>
@@ -684,8 +713,10 @@ export default function FullTestPage() {
   if (phase === "results" && rw1Done && rw2Done && math1Done && math2Done) {
     const rwRaw = calcScore(rw1Done) + calcScore(rw2Done);
     const mathRaw = calcScore(math1Done) + calcScore(math2Done);
-    const rwScaled = estimateSectionScore(rwRaw, 54, "reading_writing");
-    const mathScaled = estimateSectionScore(mathRaw, 44, "math");
+    const rwTotal = rw1Done.questions.length + rw2Done.questions.length;
+    const mathTotal = math1Done.questions.length + math2Done.questions.length;
+    const rwScaled = estimateSectionScore(rwRaw, rwTotal, "reading_writing");
+    const mathScaled = estimateSectionScore(mathRaw, mathTotal, "math");
     const total = rwScaled + mathScaled;
 
     const sections = [
@@ -711,7 +742,7 @@ export default function FullTestPage() {
         </div>
 
         {/* Score cards */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="card p-5 text-center">
             <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">
               Reading & Writing
@@ -719,7 +750,7 @@ export default function FullTestPage() {
             <p className="text-3xl font-display font-bold text-sky-600 dark:text-sky-400">
               {rwScaled}
             </p>
-            <p className="text-xs text-sat-gray-400 mt-1">{rwRaw}/54 correct</p>
+            <p className="text-xs text-sat-gray-400 mt-1">{rwRaw}/{rwTotal} correct</p>
           </div>
           <div className="card p-5 text-center ring-2 ring-sat-primary">
             <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">
@@ -737,7 +768,7 @@ export default function FullTestPage() {
             <p className="text-3xl font-display font-bold text-amber-600 dark:text-amber-400">
               {mathScaled}
             </p>
-            <p className="text-xs text-sat-gray-400 mt-1">{mathRaw}/44 correct</p>
+            <p className="text-xs text-sat-gray-400 mt-1">{mathRaw}/{mathTotal} correct</p>
           </div>
         </div>
 
@@ -752,7 +783,7 @@ export default function FullTestPage() {
         {sections.map(({ label, mod }) => (
           <div key={label} className="mb-8">
             <h3 className="text-xs font-semibold text-sat-gray-500 dark:text-sat-gray-400 uppercase tracking-widest mb-3">
-              {label} — {calcScore(mod)}/{mod.questions.length} correct
+              {label}: {calcScore(mod)}/{mod.questions.length} correct
             </h3>
             <div className="space-y-2">
               {mod.questions.map((q, i) => {
@@ -811,7 +842,7 @@ export default function FullTestPage() {
                               />
                             )}
                             <div
-                              className="text-sat-gray-900 dark:text-white leading-relaxed [&_p]:mb-2 [&_strong]:font-semibold [&_img]:inline-block [&_img]:max-h-8"
+                              className="text-sat-gray-900 dark:text-white leading-relaxed [&_p]:mb-2 [&_strong]:font-semibold [&_img]:max-w-full [&_img]:h-auto"
                               dangerouslySetInnerHTML={{ __html: q.stem }}
                             />
 
@@ -839,7 +870,7 @@ export default function FullTestPage() {
                                         {opt.key}.
                                       </span>
                                       <div
-                                        className="flex-1 [&_p]:m-0 [&_img]:inline-block [&_img]:max-h-5"
+                                        className="flex-1 [&_p]:m-0 [&_img]:max-w-full [&_img]:h-auto"
                                         dangerouslySetInnerHTML={{
                                           __html: opt.text,
                                         }}
@@ -867,7 +898,7 @@ export default function FullTestPage() {
                                     correct ? "text-green-600 dark:text-green-400 font-medium" : "text-red-600 dark:text-red-400 font-medium"
                                   }
                                 >
-                                  {userAns ?? "—"}
+                                  {userAns ?? "Not answered"}
                                 </span>
                                 {!correct && (
                                   <span className="ml-3 text-sat-gray-500">
@@ -883,7 +914,7 @@ export default function FullTestPage() {
                                   Explanation
                                 </p>
                                 <div
-                                  className="leading-relaxed [&_p]:mb-2 [&_strong]:font-semibold [&_img]:inline-block [&_img]:max-h-8"
+                                  className="leading-relaxed [&_p]:mb-2 [&_strong]:font-semibold [&_img]:max-w-full [&_img]:h-auto"
                                   dangerouslySetInnerHTML={{
                                     __html: q.rationale,
                                   }}

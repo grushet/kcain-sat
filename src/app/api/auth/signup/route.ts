@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+import { isEmailAuthEnabled } from "@/lib/email-auth";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, createVerificationToken, sendVerificationEmail } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  if (!isEmailAuthEnabled()) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   try {
     const { email, password, name } = await request.json();
 
@@ -43,8 +48,11 @@ export async function POST(request: Request) {
         success: true,
         message: sent
           ? "You already started signing up. Check your email to verify your account."
-          : "You already started signing up. Verification email could not be sent—check console for link in dev.",
-        verifyUrl: !sent ? verifyUrl : undefined,
+          : "You already started signing up. Verification email could not be sent. Check the console for the link in dev.",
+        // Never hand the verification token back to the caller in production;
+        // that alone is enough to self-verify an account.
+        verifyUrl:
+          process.env.NODE_ENV === "development" && !sent ? verifyUrl : undefined,
       });
     }
 
@@ -68,7 +76,7 @@ export async function POST(request: Request) {
       success: true,
       message: sent
         ? "Account created. Check your email to verify."
-        : "Account created. Verification email could not be sent—check console for link in dev.",
+        : "Account created. Verification email could not be sent. Check the console for the link in dev.",
       verifyUrl: !sent ? verifyUrl : undefined,
     });
   } catch (e) {

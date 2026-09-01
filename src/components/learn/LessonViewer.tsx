@@ -37,17 +37,26 @@ export function LessonViewer({ lessonId }: { lessonId: string }) {
   const [flowIndex, setFlowIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const completedRef = useRef(false);
+  const [xpSaved, setXpSaved] = useState<"pending" | "saved" | "signed-out" | "error">("pending");
 
   const step = flow[flowIndex] ?? "content";
   useEffect(() => {
     if (!lesson) return;
     if (step === "done" && !completedRef.current) {
       completedRef.current = true;
+      // A signed-out student can reach a lesson, so a failure here has to be
+      // shown rather than swallowed: otherwise their XP silently disappears.
       fetch("/api/progress/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lessonId }),
-      }).catch(() => {});
+      })
+        .then((r) => {
+          if (r.ok) setXpSaved("saved");
+          else if (r.status === 401) setXpSaved("signed-out");
+          else setXpSaved("error");
+        })
+        .catch(() => setXpSaved("error"));
     }
   }, [lesson, step, lessonId]);
 
@@ -353,7 +362,24 @@ export function LessonViewer({ lessonId }: { lessonId: string }) {
               </motion.div>
               <div>
                 <h3 className="font-display font-bold text-2xl text-emerald-800 dark:text-emerald-200">Lesson complete!</h3>
-                <p className="text-emerald-700 dark:text-emerald-300">+{lesson.xpReward} XP earned</p>
+                <p className="text-emerald-700 dark:text-emerald-300">
+                  {xpSaved === "signed-out"
+                    ? `+${lesson.xpReward} XP available`
+                    : `+${lesson.xpReward} XP earned`}
+                </p>
+                {xpSaved === "signed-out" && (
+                  <p className="text-sm text-emerald-700 dark:text-emerald-300 mt-1">
+                    <Link href="/auth/login" className="font-semibold underline">
+                      Sign in
+                    </Link>{" "}
+                    to save your progress.
+                  </p>
+                )}
+                {xpSaved === "error" && (
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    We could not save this one. Your progress may not be recorded.
+                  </p>
+                )}
               </div>
             </motion.div>
             <div className="flex flex-col sm:flex-row gap-3">

@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+import { isEmailAuthEnabled } from "@/lib/email-auth";
 import { prisma } from "@/lib/prisma";
 import { verifyPasswordResetToken, hashPassword } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  if (!isEmailAuthEnabled()) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   try {
     const { email, token, password } = await request.json();
     if (!email || !token || !password) {

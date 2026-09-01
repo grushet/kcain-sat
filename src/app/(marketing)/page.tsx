@@ -24,7 +24,7 @@ const FEATURES = [
     title: "Structured Path",
     subtitle: "Navigate to 1600",
     description:
-      "A visual skill tree maps every lesson. Math and Reading tracks unlock sequentially — you always know your next step.",
+      "A visual skill tree maps every lesson. Math and Reading tracks unlock sequentially, so you always know your next step.",
     stat: "24+",
     statLabel: "lessons",
   },
@@ -51,7 +51,7 @@ const FEATURES = [
     title: "700+ Questions",
     subtitle: "Real exam feel, every session",
     description:
-      "Hard SAT-style questions across Math and Reading — all with detailed explanations that teach not just what's correct, but why.",
+      "Hard SAT-style questions across Math and Reading, all with detailed explanations that teach not just what's correct, but why.",
     stat: "700+",
     statLabel: "questions",
   },
@@ -144,7 +144,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.3 }}
             >
-              Structured SAT prep — bite-sized lessons, real questions, daily
+              Structured SAT prep: bite-sized lessons, real questions, daily
               streaks. Level up your score one session at a time.
             </motion.p>
 
@@ -447,7 +447,7 @@ export default function LandingPage() {
               {
                 step: "03",
                 title: "Start learning",
-                desc: "Lessons, Full Test, Calendar, and Practice — all in the sidebar.",
+                desc: "Lessons, Full Test, Calendar, and Practice, all in the sidebar.",
               },
               {
                 step: "04",

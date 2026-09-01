@@ -17,7 +17,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "cain | SAT Prep — Math + Reading",
+  title: "cain | SAT Prep: Math + Reading",
   description:
     "Master the SAT with bite-sized lessons, practice questions, and a structured learning path. Track your progress and build daily streaks.",
 };

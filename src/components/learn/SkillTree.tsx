@@ -8,6 +8,7 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import { SAT_SECTIONS } from "@/lib/db";
 import { LESSONS } from "@/lib/lessons";
+import { MATH_LESSON_IDS, READING_LESSON_IDS } from "@/lib/lessons";
 
 export type SkillNodeStatus = "locked" | "available" | "completed" | "current";
 
@@ -20,9 +21,6 @@ export interface SkillNode {
   section: "math" | "reading";
   order: number;
 }
-
-const MATH_IDS = ["1", "2", "3", "R1", "4", "5", "6", "R2", "7", "8", "9", "10", "R3", "19", "20", "21", "R4", "25", "26", "27", "28", "29", "35", "36", "37", "38", "39", "45", "46", "47", "48", "49", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "75", "77", "79", "81"];
-const READING_IDS = ["11", "12", "13", "R5", "14", "15", "16", "R6", "17", "18", "22", "23", "24", "R7", "30", "31", "32", "33", "34", "40", "41", "42", "43", "44", "50", "51", "52", "53", "54", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "76", "78", "80", "82"];
 
 function buildNodes(ids: string[], section: "math" | "reading", completedIds: Set<string>): SkillNode[] {
   let foundCurrent = false;
@@ -143,8 +141,8 @@ export function SkillTree() {
       .catch(() => setCompletedIds(new Set()));
   }, [session]);
 
-  const mathNodes = buildNodes(MATH_IDS, "math", completedIds);
-  const readingNodes = buildNodes(READING_IDS, "reading", completedIds);
+  const mathNodes = buildNodes(MATH_LESSON_IDS, "math", completedIds);
+  const readingNodes = buildNodes(READING_LESSON_IDS, "reading", completedIds);
 
   const sections = [
     { section: "math" as const, nodes: mathNodes, label: SAT_SECTIONS[0].name },
