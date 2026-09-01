@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { KcainLogo } from "@/components/layout/KcainLogo";
@@ -10,6 +10,25 @@ import { KcainLogo } from "@/components/layout/KcainLogo";
 // Email/password sign-in is dormant until an email provider (Resend, SES, etc.)
 // is configured — flip this on once EMAIL_FROM / RESEND_API_KEY are set.
 const EMAIL_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_EMAIL_AUTH === "true";
+
+// When OAuth fails, NextAuth redirects back here with ?error=<code> rather than
+// returning anything to the caller. Without this the page would render as if
+// nothing had happened, which makes a broken login impossible to diagnose.
+const AUTH_ERRORS: Record<string, string> = {
+  OAuthSignin: "Could not reach Google. Please try again.",
+  OAuthCallback: "Google rejected the sign-in. This usually means the redirect URI or NEXTAUTH_URL is misconfigured.",
+  OAuthCreateAccount: "Could not create your account. Please try again.",
+  OAuthAccountNotLinked: "That email is already registered with a different sign-in method.",
+  Callback: "Sign-in could not be completed. Please try again.",
+  AccessDenied: "Sign-in was denied. If this persists, the server may be unable to reach the database.",
+  Configuration: "Server auth configuration error. Check that NEXTAUTH_SECRET and the Google credentials are set.",
+  Verification: "That sign-in link has expired. Please try again.",
+};
+
+function describeAuthError(code: string | null): string {
+  if (!code) return "";
+  return AUTH_ERRORS[code] ?? `Sign-in failed (${code}).`;
+}
 
 function GoogleIcon() {
   return (
@@ -24,11 +43,16 @@ function GoogleIcon() {
 
 function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Errors raised during the OAuth round trip arrive as a query param, not as a
+  // return value, so surface those alongside any locally-set error.
+  const displayedError = error || describeAuthError(searchParams.get("error"));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,14 +75,10 @@ function LoginForm() {
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
     setError("");
-    const res = await signIn("google", { redirect: false, callbackUrl: "/dashboard" });
-    if (res?.error) {
-      setError("Google sign-in failed. Please try again.");
-      setGoogleLoading(false);
-      return;
-    }
-    router.push("/dashboard");
-    router.refresh();
+    // OAuth always performs a full-page redirect to the provider: this call does
+    // not return, and `redirect: false` is ignored for non-credentials providers.
+    // Failures come back as ?error= on this page, handled by displayedError.
+    await signIn("google", { callbackUrl: "/dashboard" });
   }
 
   return (
@@ -87,13 +107,13 @@ function LoginForm() {
           {googleLoading ? "Redirecting…" : "Continue with Google"}
         </motion.button>
 
-        {error && (
+        {displayedError && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="p-3 rounded-xl bg-sat-crimson/10 text-sat-crimson text-sm mb-4"
           >
-            {error}
+            {displayedError}
           </motion.div>
         )}
 
