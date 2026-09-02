@@ -58,7 +58,7 @@ export function TryItSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          Try it — no signup required
+          Try it, no signup required
         </motion.h2>
         <motion.p
           className="text-sat-gray-600 dark:text-sky-200 text-center max-w-xl mx-auto mb-10"
@@ -149,7 +149,7 @@ export function TryItSection() {
 
           {tab === "lesson" && LESSON_1 && (
             <div>
-              <h3 className="font-display font-bold text-xl mb-4 dark:text-white">{LESSON_1.title} — preview</h3>
+              <h3 className="font-display font-bold text-xl mb-4 dark:text-white">{LESSON_1.title} preview</h3>
               <div className="prose prose-sm dark:prose-invert max-w-none">
                 {PREVIEW_BLOCKS.map((block, i) => (
                   <Block key={i} block={block} />

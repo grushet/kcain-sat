@@ -5,32 +5,32 @@ import { motion } from "framer-motion";
 import { Shuffle, Calculator, BookOpen, PenLine } from "lucide-react";
 
 const MATH_TOPICS = [
-  { topic: "Math - Algebra", count: "50+", href: "/practice/math-algebra" },
-  { topic: "Math - Quadratics", count: "25+", href: "/practice/math-quadratics" },
+  { topic: "Math - Algebra", count: "80+", href: "/practice/math-algebra" },
+  { topic: "Math - Quadratics", count: "30+", href: "/practice/math-quadratics" },
   { topic: "Math - Functions", count: "20+", href: "/practice/math-functions" },
-  { topic: "Math - Data & Stats", count: "25+", href: "/practice/math-data" },
+  { topic: "Math - Data & Stats", count: "45+", href: "/practice/math-data" },
   { topic: "Math - Geometry", count: "30+", href: "/practice/math-geometry" },
-  { topic: "Math - Inequalities", count: "4", href: "/practice/math-inequalities" },
-  { topic: "Math - Exponentials", count: "4", href: "/practice/math-exponentials" },
-  { topic: "Math - Trigonometry", count: "4", href: "/practice/math-trigonometry" },
-  { topic: "Math - Word Problems", count: "4", href: "/practice/math-word-problems" },
-  { topic: "Math - Advanced", count: "4", href: "/practice/math-advanced" },
-  { topic: "Math - Mixed", count: "150+", href: "/practice/math-problem-solving" },
+  { topic: "Math - Inequalities", count: "15", href: "/practice/math-inequalities" },
+  { topic: "Math - Exponentials", count: "15+", href: "/practice/math-exponentials" },
+  { topic: "Math - Trigonometry", count: "12+", href: "/practice/math-trigonometry" },
+  { topic: "Math - Word Problems", count: "35+", href: "/practice/math-word-problems" },
+  { topic: "Math - Advanced", count: "12", href: "/practice/math-advanced" },
+  { topic: "Math - Mixed", count: "300+", href: "/practice/math-problem-solving" },
 ];
 
 const READING_TOPICS = [
-  { topic: "Reading - Evidence", count: "20+", href: "/practice/reading-evidence" },
-  { topic: "Reading - Words", count: "15+", href: "/practice/reading-words" },
-  { topic: "Reading - Main Idea", count: "4", href: "/practice/reading-main-idea" },
-  { topic: "Reading - Tone", count: "4", href: "/practice/reading-tone" },
-  { topic: "Reading - Rhetoric", count: "4", href: "/practice/reading-rhetoric" },
-  { topic: "Reading - Comprehension", count: "15+", href: "/practice/reading-comprehension" },
+  { topic: "Reading - Evidence", count: "30+", href: "/practice/reading-evidence" },
+  { topic: "Reading - Words", count: "30+", href: "/practice/reading-words" },
+  { topic: "Reading - Main Idea", count: "30", href: "/practice/reading-main-idea" },
+  { topic: "Reading - Tone", count: "15+", href: "/practice/reading-tone" },
+  { topic: "Reading - Rhetoric", count: "20+", href: "/practice/reading-rhetoric" },
+  { topic: "Reading - Comprehension", count: "200+", href: "/practice/reading-comprehension" },
 ];
 
 const WRITING_TOPICS = [
-  { topic: "Writing - Conventions", count: "30+", href: "/practice/writing-conventions" },
-  { topic: "Writing - Conventions Advanced", count: "3", href: "/practice/writing-conventions-advanced" },
-  { topic: "Writing - Transitions", count: "15+", href: "/practice/writing-transitions" },
+  { topic: "Writing - Conventions", count: "25+", href: "/practice/writing-conventions" },
+  { topic: "Writing - Conventions Advanced", count: "15", href: "/practice/writing-conventions-advanced" },
+  { topic: "Writing - Transitions", count: "20+", href: "/practice/writing-transitions" },
 ];
 
 const sectionConfig = [
@@ -85,7 +85,7 @@ export default function PracticePage() {
           </h1>
         </div>
         <p className="text-sat-gray-600 dark:text-sky-200 text-lg max-w-2xl">
-          Pick a category. Every time you open it you get a <strong>new random set</strong> of questions—no two sessions the same.
+          Pick a category. Every time you open it you get a <strong>new random set</strong> of questions, no two sessions the same.
         </p>
       </motion.div>
 

@@ -55,7 +55,7 @@ export const LESSONS: Record<string, LessonData> = {
       { type: "example", content: "Example: Solve 2x + 5 = 13" },
       { type: "formula", content: "2x + 5 = 13 → subtract 5 from both sides → 2x = 8 → divide both sides by 2 → x = 4" },
       { type: "example", content: "Example: Solve -3x - 4 = 11. Add 4: -3x = 15. Divide by -3: x = -5." },
-      { type: "tip", content: "SAT TIP: When stuck, plug answer choices back into the equation. Start with B or C—they're correct more often than A or D. Check your answer by substituting it back." },
+      { type: "tip", content: "SAT TIP: When stuck, plug answer choices back into the equation. Testing B or C first often brackets the answer fastest. Check your answer by substituting it back." },
       { type: "text", content: "When the equation has parentheses, use the distributive property first: a(b + c) = ab + ac. Then collect like terms and isolate the variable. For example, 2(x + 3) = 14 becomes 2x + 6 = 14, then 2x = 8, x = 4." },
       { type: "example", content: "Example: 5 - 2x = 3x + 20. Get all x terms on one side: add 2x → 5 = 5x + 20. Subtract 20: -15 = 5x. Divide by 5: x = -3." },
       { type: "formula", content: "For equations with variables on both sides: add or subtract to get all variable terms on one side and constants on the other. Then divide by the coefficient." },
@@ -117,7 +117,7 @@ export const LESSONS: Record<string, LessonData> = {
       {
         type: "desmos",
         title: "Desmos hack: See the line",
-        content: "Graph y = mx + b in Desmos to see how slope (m) and y-intercept (b) change the line. Try y = 2x + 1, then y = -x + 3. On the SAT you can use the Desmos graphing calculator in the math section—type your equation to check your answer or visualize systems.",
+        content: "Graph y = mx + b in Desmos to see how slope (m) and y-intercept (b) change the line. Try y = 2x + 1, then y = -x + 3. On the SAT you can use the Desmos graphing calculator in the math section: type your equation to check your answer or visualize systems.",
         url: "https://www.desmos.com/calculator",
       },
     ],
@@ -198,11 +198,11 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 15,
     content: [
       { type: "heading", content: "Quadratics: y = ax² + bx + c" },
-      { type: "text", content: "Quadratic functions graph as parabolas—U-shaped curves. The coefficient a determines whether the parabola opens up (a > 0) or down (a < 0). The vertex is the highest or lowest point; its x-coordinate is x = -b/(2a)." },
+      { type: "text", content: "Quadratic functions graph as parabolas, U-shaped curves. The coefficient a determines whether the parabola opens up (a > 0) or down (a < 0). The vertex is the highest or lowest point; its x-coordinate is x = -b/(2a)." },
       { type: "text", content: "To solve ax² + bx + c = 0 (find where the parabola crosses the x-axis), use factoring when possible, or the quadratic formula. The discriminant b² - 4ac tells you how many real solutions: positive = two, zero = one (repeated), negative = none (parabola doesn't cross the axis)." },
       { type: "formula", content: "Quadratic formula: x = (-b ± √(b² - 4ac)) / 2a" },
       { type: "example", content: "For x² - 5x + 6 = 0, factor: (x - 2)(x - 3) = 0, so x = 2 or x = 3. Vertex is at x = 5/2 = 2.5." },
-      { type: "tip", content: "SAT TIP: Try factoring first—it's faster. Look for (x ± a)(x ± b) where a·b = c and a+b = b (when a=1). If it doesn't factor cleanly, use the quadratic formula. Memorize the formula; it appears often." },
+      { type: "tip", content: "SAT TIP: Try factoring first; it's faster. Look for (x ± a)(x ± b) where a·b = c and a+b = b (when a=1). If it doesn't factor cleanly, use the quadratic formula. Memorize the formula; it appears often." },
       { type: "text", content: "Completing the square: rewrite x² + bx + c as (x + b/2)² minus a constant. This helps find the vertex form y = a(x - h)² + k, where (h, k) is the vertex. The vertex is the minimum if a > 0 and the maximum if a < 0." },
       { type: "example", content: "x² + 6x + 5 = 0. Complete the square: x² + 6x + 9 = 4, so (x + 3)² = 4, x + 3 = ±2, x = -1 or x = -5." },
       { type: "formula", content: "Vertex form: y = a(x - h)² + k. Vertex at (h, k). Axis of symmetry: x = h. For standard form, h = -b/(2a)." },
@@ -267,11 +267,11 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 15,
     content: [
       { type: "heading", content: "Exponential Growth & Decay" },
-      { type: "text", content: "Exponential form: y = a·b^x. Here a is the initial value (when x = 0) and b is the growth or decay factor. When b > 1, the function grows; when 0 < b < 1, it decays. Unlike linear functions, the rate of change is proportional to the current value—so they grow or shrink very quickly over time." },
+      { type: "text", content: "Exponential form: y = a·b^x. Here a is the initial value (when x = 0) and b is the growth or decay factor. When b > 1, the function grows; when 0 < b < 1, it decays. Unlike linear functions, the rate of change is proportional to the current value, so they grow or shrink very quickly over time." },
       { type: "text", content: "Doubling time and half-life are classic applications. If something doubles every 3 years, after n periods of 3 years the amount is initial × 2^n. For half-life, replace 2 with 1/2." },
       { type: "example", content: "y = 100(2)^x: when x = 0, y = 100; when x = 1, y = 200; when x = 2, y = 400. It doubles every time x increases by 1." },
       { type: "example", content: "Decay: y = 50(0.5)^x. When x = 0, y = 50; when x = 1, y = 25; when x = 2, y = 12.5. Half-life of 1 unit." },
-      { type: "tip", content: "SAT TIP: For doubling/halving, use: after n periods, amount = initial × 2^n or × (1/2)^n. Watch units—if the problem says 'doubles every 3 years' and asks for 6 years, n = 2." },
+      { type: "tip", content: "SAT TIP: For doubling/halving, use: after n periods, amount = initial × 2^n or × (1/2)^n. Watch units: if the problem says 'doubles every 3 years' and asks for 6 years, n = 2." },
       { type: "text", content: "Exponential equations: when you have b^x = b^y, then x = y (same base b > 0, b ≠ 1). When bases differ, try to rewrite so they match, or take a logarithm. On the SAT, often you can plug in or use simple integer exponents." },
       { type: "example", content: "2^x = 16. Write 16 = 2^4, so 2^x = 2^4, hence x = 4. For 3^(2x) = 81, we have 81 = 3^4, so 2x = 4, x = 2." },
       { type: "formula", content: "Compound growth: A = P(1 + r)^t. Decay: A = P(1 - r)^t. Here P = initial amount, r = rate per period, t = number of periods." },
@@ -405,7 +405,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 15,
     content: [
       { type: "heading", content: "Function Notation" },
-      { type: "text", content: "f(x) means the output of the function f when the input is x. Think of it as 'f of x.' The domain is the set of all allowed inputs (x-values); the range is the set of all possible outputs (y-values). A relation is a function if each input has exactly one output—so on a graph, no vertical line should hit the curve more than once (vertical line test)." },
+      { type: "text", content: "f(x) means the output of the function f when the input is x. Think of it as 'f of x.' The domain is the set of all allowed inputs (x-values); the range is the set of all possible outputs (y-values). A relation is a function if each input has exactly one output, so on a graph, no vertical line should hit the curve more than once (vertical line test)." },
       { type: "text", content: "Composition: f(g(x)) means first apply g to x, then apply f to that result. Work from the inside out. For example, if f(x) = 2x and g(x) = x + 3, then f(g(2)) = f(5) = 10." },
       { type: "example", content: "If f(x) = x² and g(x) = x - 1, then f(g(x)) = (x - 1)². So f(g(4)) = (4 - 1)² = 9." },
       { type: "tip", content: "SAT TIP: For f(g(x)), find g(x) first, then plug that into f. For domain, exclude x that make denominators zero or square roots negative. If the graph passes the vertical line test, it's a function." },
@@ -474,10 +474,10 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Mean, Median, Mode" },
       { type: "text", content: "Mean (average) = sum of all values divided by the number of values. Median = the middle value when the data is sorted; if there's an even number of values, median is the average of the two middle values. Mode = the value that appears most often (there can be more than one mode or no mode)." },
-      { type: "text", content: "Outliers—values that are much higher or lower than the rest—pull the mean toward them but have little effect on the median. So when data is skewed or has outliers, the median is often a better measure of 'typical' than the mean." },
+      { type: "text", content: "Outliers, values that are much higher or lower than the rest, pull the mean toward them but have little effect on the median. So when data is skewed or has outliers, the median is often a better measure of 'typical' than the mean." },
       { type: "example", content: "Data: 2, 4, 4, 6, 8. Mean = (2+4+4+6+8)/5 = 24/5 = 4.8. Median = middle value = 4. Mode = 4." },
       { type: "tip", content: "SAT TIP: New mean after adding a value: (old sum + new value) / (n + 1). For median with even count, average the two middle values. Range = max - min. If one value changes, recalculate sum or count as needed." },
-      { type: "text", content: "Standard deviation measures spread: how far values typically are from the mean. A larger standard deviation means more spread. You don't need to compute it by hand on the SAT—focus on understanding that adding a constant to all values doesn't change spread; multiplying by a constant multiplies the spread." },
+      { type: "text", content: "Standard deviation measures spread: how far values typically are from the mean. A larger standard deviation means more spread. You don't need to compute it by hand on the SAT; focus on understanding that adding a constant to all values doesn't change spread; multiplying by a constant multiplies the spread." },
       { type: "example", content: "If the mean of 5 numbers is 10 and their sum is 50, adding a 6th value of 10 keeps the mean 10. New sum = 60, n = 6, mean = 10. If the 6th value is 16, new mean = 66/6 = 11." },
       { type: "formula", content: "Mean = sum/count. To find a missing value given the mean: (sum + x)/n = mean, so x = mean·n - sum. Median position: (n+1)/2 for odd n; average of positions n/2 and n/2+1 for even n." },
       { type: "text", content: "Scatter plots: correlation doesn't imply causation. Line of best fit minimizes vertical distances. Outliers can pull the line; removing an outlier may change the slope. Interpolation = estimating within the data range; extrapolation = outside (less reliable)." },
@@ -542,9 +542,9 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Shapes & Formulas" },
       { type: "text", content: "Rectangle: area A = length × width; perimeter P = 2(length + width). Triangle: area A = ½ × base × height (the height is perpendicular to the base). Circle: area A = πr² and circumference C = 2πr, where r is the radius. Trapezoid: area A = ½ × (base₁ + base₂) × height." },
-      { type: "text", content: "For composite shapes, break them into rectangles, triangles, or circles, find each area, and add (or subtract if there's a cutout). Always use the radius in circle formulas—if you're given the diameter d, then r = d/2." },
+      { type: "text", content: "For composite shapes, break them into rectangles, triangles, or circles, find each area, and add (or subtract if there's a cutout). Always use the radius in circle formulas: if you're given the diameter d, then r = d/2." },
       { type: "formula", content: "Rectangle: A = lw, P = 2l + 2w. Triangle: A = ½bh. Circle: A = πr², C = 2πr. Trapezoid: A = ½(b₁+b₂)h" },
-      { type: "tip", content: "SAT TIP: Circle formulas use r. If given diameter, halve it first. Similar shapes have proportional sides—use ratios. For triangles, the height must be perpendicular to the base you use." },
+      { type: "tip", content: "SAT TIP: Circle formulas use r. If given diameter, halve it first. Similar shapes have proportional sides; use ratios. For triangles, the height must be perpendicular to the base you use." },
       { type: "text", content: "Volume: rectangular prism V = lwh; cylinder V = πr²h; sphere V = (4/3)πr³; cone V = (1/3)πr²h. Surface area: cube 6s²; cylinder 2πr² + 2πrh; sphere 4πr². All dimensions must be in the same units." },
       { type: "example", content: "A circle has radius 5. Area = π(5)² = 25π. Circumference = 2π(5) = 10π. A trapezoid with bases 6 and 10 and height 4 has area ½(6+10)(4) = 32." },
       { type: "formula", content: "Similar triangles: corresponding sides are proportional. If ΔABC ~ ΔDEF, then AB/DE = BC/EF = AC/DF. Areas scale with the square of the scale factor; volumes with the cube." },
@@ -613,7 +613,7 @@ export const LESSONS: Record<string, LessonData> = {
       { type: "text", content: "Special right triangles save time. In a 30-60-90 triangle, the sides are in the ratio 1 : √3 : 2 (short leg : long leg : hypotenuse). In a 45-45-90 triangle, the legs are equal and the hypotenuse is leg × √2." },
       { type: "formula", content: "a² + b² = c² (c = hypotenuse)" },
       { type: "example", content: "Legs 3 and 4: 3² + 4² = 9 + 16 = 25 = 5², so hypotenuse = 5. This is the 3-4-5 triple." },
-      { type: "tip", content: "SAT TIP: Memorize 3-4-5 and 5-12-13—they appear often. For 30-60-90: sides x, x√3, 2x. For 45-45-90: sides x, x, x√2. Always identify which side is the hypotenuse before plugging into a² + b² = c²." },
+      { type: "tip", content: "SAT TIP: Memorize 3-4-5 and 5-12-13; they appear often. For 30-60-90: sides x, x√3, 2x. For 45-45-90: sides x, x, x√2. Always identify which side is the hypotenuse before plugging into a² + b² = c²." },
       { type: "text", content: "Distance between two points (x₁,y₁) and (x₂,y₂): d = √[(x₂-x₁)² + (y₂-y₁)²]. This is the Pythagorean theorem in the coordinate plane. Midpoint: ((x₁+x₂)/2, (y₁+y₂)/2)." },
       { type: "example", content: "Distance from (0,0) to (3,4): √(3² + 4²) = √25 = 5. Midpoint of (2,4) and (6,8): (4, 6)." },
       { type: "formula", content: "In 45-45-90, if a leg is x, hypotenuse is x√2. In 30-60-90, if the short leg is x, long leg is x√3 and hypotenuse is 2x. Know which side is which from the angle measures." },
@@ -679,10 +679,10 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Adding & Multiplying Polynomials" },
       { type: "text", content: "Polynomials are expressions like 3x² + 2x - 5. When adding or subtracting, combine only like terms (same variable and exponent). When multiplying two binomials, use FOIL (First, Outer, Inner, Last) or use these key patterns: (a+b)(a-b) = a² - b² (difference of squares), (a+b)² = a² + 2ab + b², and (a-b)² = a² - 2ab + b²." },
-      { type: "text", content: "A common mistake is writing (a+b)² = a² + b². That's wrong—you must expand to a² + 2ab + b². The middle term 2ab is easy to forget." },
+      { type: "text", content: "A common mistake is writing (a+b)² = a² + b². That's wrong; you must expand to a² + 2ab + b². The middle term 2ab is easy to forget." },
       { type: "formula", content: "(a+b)(a-b) = a² - b². (a+b)² = a² + 2ab + b². (a-b)² = a² - 2ab + b²." },
       { type: "example", content: "(x+3)(x-3) = x² - 9. (x+4)² = x² + 8x + 16." },
-      { type: "tip", content: "SAT TIP: Difference of squares (x+a)(x-a) = x² - a² and perfect squares (x±a)² = x² ± 2ax + a² show up constantly. FOIL carefully—(a+b)² is NOT a² + b²." },
+      { type: "tip", content: "SAT TIP: Difference of squares (x+a)(x-a) = x² - a² and perfect squares (x±a)² = x² ± 2ax + a² show up constantly. FOIL carefully: (a+b)² is NOT a² + b²." },
       { type: "text", content: "Factoring out a GCF: 6x² + 9x = 3x(2x + 3). Factoring by grouping: ax + ay + bx + by = a(x+y) + b(x+y) = (a+b)(x+y). For quadratics x² + bx + c, look for two numbers that multiply to c and add to b." },
       { type: "example", content: "Factor x² + 7x + 12. Need two numbers with product 12 and sum 7: 3 and 4. So (x+3)(x+4). Factor 2x² - 8: 2(x² - 4) = 2(x-2)(x+2)." },
       { type: "formula", content: "Sum of cubes: a³ + b³ = (a+b)(a² - ab + b²). Difference of cubes: a³ - b³ = (a-b)(a² + ab + b²). These appear less often but are useful." },
@@ -747,11 +747,11 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 10,
     content: [
       { type: "heading", content: "Finding Evidence" },
-      { type: "text", content: "Many SAT reading questions ask which line or lines from the passage best support your answer to a previous question. The correct evidence must be directly stated in the text or clearly implied—it has to actually prove or demonstrate your chosen answer, not just be related to the topic." },
+      { type: "text", content: "Many SAT reading questions ask which line or lines from the passage best support your answer to a previous question. The correct evidence must be directly stated in the text or clearly implied; it has to actually prove or demonstrate your chosen answer, not just be related to the topic." },
       { type: "text", content: "Paired questions are common: first you answer a main idea or inference question, then you select the quote that best supports that answer. Wrong choices often sound plausible or mention the same subject, but they don't logically support the specific claim you made." },
-      { type: "example", content: "If the main question asks why the author mentions a study, the right evidence will be the sentence or two that explicitly state or show that reason—not just any sentence that mentions the study." },
+      { type: "example", content: "If the main question asks why the author mentions a study, the right evidence will be the sentence or two that explicitly state or show that reason, not just any sentence that mentions the study." },
       { type: "tip", content: "SAT TIP: Always answer the main question first, then find the line that proves it. Eliminate evidence that is off-topic, too broad, or only loosely related. The best answer directly and clearly supports your previous choice." },
-      { type: "text", content: "The best evidence quote will usually be from the same paragraph or the one right before or after where the claim is made. If the main question is about a cause, the evidence should state or clearly imply that cause—not just mention the effect." },
+      { type: "text", content: "The best evidence quote will usually be from the same paragraph or the one right before or after where the claim is made. If the main question is about a cause, the evidence should state or clearly imply that cause, not just mention the effect." },
       { type: "example", content: "Main answer: 'The author mentions the study to show that the method works.' Strong evidence: a sentence that says the study demonstrated success or improved results. Weak: a sentence that only names the study." },
       { type: "text", content: "Sometimes the evidence question comes before the main question. In that case, treat each evidence choice as a hypothesis: 'If this is the right evidence, what would the main answer be?' Then see which pair matches." },
       { type: "text", content: "Trap answers include: a quote that discusses the same topic but supports a different claim; a quote that is too general; or a quote that comes from the wrong part of the passage. The right quote pins down the specific idea in your answer." },
@@ -857,12 +857,12 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 15,
     content: [
       { type: "heading", content: "Vocabulary in Context" },
-      { type: "text", content: "SAT vocabulary questions don't test whether you know the fanciest meaning of a word—they test whether you can figure out what the word means in this specific sentence. Often the word has multiple meanings; the wrong answers might be valid definitions in other contexts but not here." },
+      { type: "text", content: "SAT vocabulary questions don't test whether you know the fanciest meaning of a word; they test whether you can figure out what the word means in this specific sentence. Often the word has multiple meanings; the wrong answers might be valid definitions in other contexts but not here." },
       { type: "text", content: "Strategy: cover the word and ask yourself what word or phrase would fit in the blank. Then look at the choices and pick the one that matches your prediction. You can also plug each choice into the sentence and see which one makes the most sense and doesn't change the intended meaning." },
       { type: "example", content: "In 'the argument was sound,' 'sound' could mean noise (A), solid/valid (B), or to measure depth (C). Only (B) fits the idea that the argument is logical or well-grounded." },
       { type: "tip", content: "SAT TIP: Cover the word and predict. Then match to choices. The SAT tests context, not isolated definitions. If two choices seem close, see which one fits the tone and logic of the full sentence or paragraph." },
       { type: "text", content: "Words with multiple meanings: 'charge' can mean cost, accuse, or attack. 'Scale' can mean size, a weighing instrument, or to climb. Always plug each choice into the sentence and ask which meaning fits the surrounding logic and tone." },
-      { type: "example", content: "In 'the critic's sharp remarks,' 'sharp' means harsh or cutting—not pointed or acute in the geometric sense. In 'a sharp increase,' 'sharp' means sudden or steep." },
+      { type: "example", content: "In 'the critic's sharp remarks,' 'sharp' means harsh or cutting, not pointed or acute in the geometric sense. In 'a sharp increase,' 'sharp' means sudden or steep." },
       { type: "text", content: "Tone matters: if the passage is formal, the right word will be formal. If it's scientific, pick the precise technical meaning. Wrong answers might be correct in casual or different contexts." },
       { type: "text", content: "When the sentence has a contrast (e.g. 'although,' 'but'), the word might mean the opposite of what you'd expect in a neutral sentence. Read the full sentence and the one before/after." },
       { type: "tip", content: "Eliminate choices that don't make sense when substituted. The right answer will make the sentence clear and consistent with the passage's meaning." },
@@ -936,7 +936,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Grammar Rules" },
       { type: "text", content: "Standard English conventions on the SAT include subject-verb agreement (singular subject → singular verb; plural subject → plural verb), pronoun clarity (pronouns must clearly refer to a specific noun), parallel structure (items in a list or comparison must be in the same grammatical form), and punctuation (commas, semicolons, apostrophes used correctly)." },
-      { type: "text", content: "Interrupting phrases can trip you up: 'The list of items was long'—the subject is 'list' (singular), not 'items.' So 'each of the students has' is correct. Also watch for compound subjects: 'Neither the teacher nor the students were'—the verb agrees with the closer noun (students)." },
+      { type: "text", content: "Interrupting phrases can trip you up: 'The list of items was long': the subject is 'list' (singular), not 'items.' So 'each of the students has' is correct. Also watch for compound subjects: 'Neither the teacher nor the students were': the verb agrees with the closer noun (students)." },
       { type: "example", content: "Wrong: 'Each of the students have a book.' Right: 'Each of the students has a book.' 'Each' is the subject and is singular." },
       { type: "tip", content: "SAT TIP: 'NO CHANGE' is correct about 25% of the time. If several choices are grammatically correct, choose the shortest. Subject-verb agreement: find the true subject and ignore phrases between it and the verb." },
       { type: "text", content: "Pronoun-antecedent agreement: a pronoun must agree in number (singular/plural) and person with the noun it refers to. Avoid vague pronouns: 'they' or 'it' should clearly refer to one noun. If it's unclear, the sentence needs revision." },
@@ -1029,7 +1029,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Clarity & Conciseness" },
       { type: "text", content: "The SAT rewards clear, concise writing. Redundancy (saying the same thing twice), wordiness (using more words than needed), and vague or awkward phrasing are often wrong. The best answer usually states the idea directly and uses the fewest words necessary." },
-      { type: "text", content: "Put the main idea or subject first when possible. Transitions between sentences should show the real relationship—contrast (however), cause (therefore), addition (moreover), example (for instance). Avoid filler phrases that add no meaning." },
+      { type: "text", content: "Put the main idea or subject first when possible. Transitions between sentences should show the real relationship: contrast (however), cause (therefore), addition (moreover), example (for instance). Avoid filler phrases that add no meaning." },
       { type: "example", content: "Wordy: 'In order to be able to succeed, one must try.' Concise: 'To succeed, one must try.' Also: 'Due to the fact that' → 'Because'; 'at this point in time' → 'now.'" },
       { type: "tip", content: "SAT TIP: When all choices are grammatically correct, choose the shortest that preserves meaning. Cut 'due to the fact that,' 'in order to,' 'the reason is because,' and similar fillers." },
       { type: "text", content: "Parallel structure: items in a list or comparison must be in the same grammatical form. 'She likes to run, to swim, and biking' is wrong; use 'to run, to swim, and to bike' or 'running, swimming, and biking.'" },
@@ -1131,7 +1131,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 12,
     content: [
       { type: "heading", content: "Central Idea" },
-      { type: "text", content: "The main idea (central idea) is what the passage as a whole is primarily about—not just one paragraph or detail. The author's purpose is their goal: to inform or explain, to persuade, or to entertain/narrate. You often need to read the full passage before deciding; the main idea usually emerges from the entire structure." },
+      { type: "text", content: "The main idea (central idea) is what the passage as a whole is primarily about, not just one paragraph or detail. The author's purpose is their goal: to inform or explain, to persuade, or to entertain/narrate. You often need to read the full passage before deciding; the main idea usually emerges from the entire structure." },
       { type: "text", content: "Wrong answers for main idea questions often focus on a single detail, are too broad (could apply to many passages), or are too narrow (only part of the passage). The right answer captures the overall point without going beyond what the passage discusses." },
       { type: "example", content: "A passage that walks through a scientist's step-by-step discovery is likely meant to inform or explain. One that argues for a policy change is meant to persuade. A passage that tells a story with characters and events may be meant to entertain or illustrate a theme." },
       { type: "tip", content: "SAT TIP: Main idea answers synthesize the whole passage. Avoid choices that are one detail or too broad. For purpose, ask: Is the author mainly explaining, arguing, or telling a story?" },
@@ -1258,13 +1258,13 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 15,
     content: [
       { type: "heading", content: "Author's Choices" },
-      { type: "text", content: "Rhetorical analysis questions ask why the author made specific choices—word choice, structure, use of a quote or example, tone, or organization. You're analyzing how the author communicates, not just what they say. Consider: What effect does this choice have on the reader? Does it emphasize, contrast, qualify a claim, add credibility, or create an emotional response?" },
+      { type: "text", content: "Rhetorical analysis questions ask why the author made specific choices: word choice, structure, use of a quote or example, tone, or organization. You're analyzing how the author communicates, not just what they say. Consider: What effect does this choice have on the reader? Does it emphasize, contrast, qualify a claim, add credibility, or create an emotional response?" },
       { type: "text", content: "When the SAT asks 'The author mentions X primarily in order to...' or 'The function of the second paragraph is to...', they want you to identify the role that part plays in the overall argument or narrative." },
       { type: "example", content: "If the author quotes an expert after making a claim, the quote likely supports or adds authority to that claim. If the author uses a short, punchy sentence after long ones, they may be emphasizing a contrast or key point." },
       { type: "tip", content: "SAT TIP: Rhetoric = how the author says it. Focus on effect: emphasize, contrast, qualify, persuade, or support. The right answer will describe the role of the choice in the passage, not just restate the content." },
       { type: "text", content: "'The author mentions X primarily in order to...' means: what function does X serve? Does it support a claim, provide contrast, introduce a counterargument, add evidence, or create an emotional effect? The answer is about function, not just what X is." },
       { type: "example", content: "If the author quotes an expert after stating a claim, the quote likely adds credibility or support. If the author uses a short sentence after long ones, it may emphasize a key point or create contrast." },
-      { type: "text", content: "Structure questions: 'The function of the second paragraph is to...'—think about how that paragraph fits in: does it introduce, develop, contrast, qualify, or conclude? Link structure to the passage's overall argument or narrative." },
+      { type: "text", content: "Structure questions: 'The function of the second paragraph is to...': think about how that paragraph fits in: does it introduce, develop, contrast, qualify, or conclude? Link structure to the passage's overall argument or narrative." },
       { type: "text", content: "Word choice (diction): why did the author use this word instead of another? Consider connotation (positive/negative/neutral), formality, or precision. The right answer ties the word to the author's purpose or effect." },
       { type: "tip", content: "Wrong answers often just summarize what the sentence says instead of explaining its role. The right answer says what the choice does for the argument or the reader." },
     ],
@@ -1588,7 +1588,7 @@ export const LESSONS: Record<string, LessonData> = {
       { type: "text", content: "Rational expressions are fractions whose numerator and denominator are polynomials. To simplify, factor both the top and bottom and cancel any common factors. Remember: the denominator can never equal zero, so after simplifying you may need to state that x ≠ (values that make the original denominator zero)." },
       { type: "text", content: "To add or subtract rational expressions, find a common denominator (often the product of the denominators or the LCD), rewrite each fraction, then add or subtract the numerators. To multiply, multiply numerators and denominators, then simplify. To divide, multiply by the reciprocal of the second fraction." },
       { type: "example", content: "(x² - 4)/(x - 2) = (x-2)(x+2)/(x-2) = x + 2, for x ≠ 2." },
-      { type: "tip", content: "SAT TIP: Factor first—answers are often in factored form. Note restrictions: denominator ≠ 0. When in doubt, plug a simple value into the original and your answer to check." },
+      { type: "tip", content: "SAT TIP: Factor first: answers are often in factored form. Note restrictions: denominator ≠ 0. When in doubt, plug a simple value into the original and your answer to check." },
       { type: "text", content: "Adding rational expressions: find the LCD (least common denominator), rewrite each fraction with that denominator, then add the numerators. For (1/x) + (1/(x+1)), LCD = x(x+1); rewrite to get (x+1 + x) / [x(x+1)] = (2x+1)/[x(x+1)]." },
       { type: "example", content: "Simplify (x² - 9)/(x² + 5x + 6). Factor: (x-3)(x+3) / [(x+2)(x+3)] = (x-3)/(x+2), for x ≠ -2, -3." },
       { type: "formula", content: "To divide: multiply by the reciprocal. (A/B) ÷ (C/D) = (A/B)(D/C) = AD/(BC). Then simplify. Always state restrictions where the original denominator was zero." },
@@ -1656,7 +1656,7 @@ export const LESSONS: Record<string, LessonData> = {
       { type: "text", content: "Key exponent rules: x^a · x^b = x^(a+b); x^a / x^b = x^(a-b); (x^a)^b = x^(ab); x^0 = 1 (when x ≠ 0). Radicals: √x = x^(1/2); the nth root of x is x^(1/n). So √(ab) = √a · √b, and √(a/b) = √a/√b. You can convert between radicals and fractional exponents to simplify." },
       { type: "text", content: "Important: √(x²) = |x|, not x. When x is negative, x² is positive and √(x²) is positive, so √(x²) = -x = |x|. For example, if x = -5, then √(x²) = √25 = 5 = -(-5) = |x|." },
       { type: "formula", content: "√x = x^(1/2). x^a · x^b = x^(a+b). (x^a)^b = x^(ab). √(ab) = √a · √b. √(x²) = |x|." },
-      { type: "tip", content: "SAT TIP: Use fractional exponents to combine or simplify. √(x²) = |x|—when x < 0, the result is -x. Don't assume √(x²) = x unless you know x ≥ 0." },
+      { type: "tip", content: "SAT TIP: Use fractional exponents to combine or simplify. √(x²) = |x|; when x < 0, the result is -x. Don't assume √(x²) = x unless you know x ≥ 0." },
       { type: "text", content: "Simplifying radicals: √(ab) = √a · √b. So √50 = √(25·2) = 5√2. Rationalize denominators: 1/√2 = √2/2 (multiply top and bottom by √2). For 1/(√a + √b), multiply by (√a - √b)/(√a - √b) to rationalize." },
       { type: "example", content: "x^(1/2) · x^(1/3) = x^(1/2 + 1/3) = x^(5/6). (2^3)^2 = 2^6. √(18) = √(9·2) = 3√2." },
       { type: "formula", content: "x^(a)·x^(b) = x^(a+b). x^a / x^b = x^(a-b). (x^a)^b = x^(ab). x^(-n) = 1/x^n. x^(1/n) = nth root of x. √x = x^(1/2)." },
@@ -1721,10 +1721,10 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 12,
     content: [
       { type: "heading", content: "Arithmetic & Geometric Sequences" },
-      { type: "text", content: "In an arithmetic sequence, the difference between consecutive terms is constant (d). So a_n = a_1 + (n-1)d. In a geometric sequence, the ratio between consecutive terms is constant (r). So a_n = a_1 · r^(n-1). To tell them apart: subtract consecutive terms—if the difference is constant, it's arithmetic; if the ratio is constant, it's geometric." },
+      { type: "text", content: "In an arithmetic sequence, the difference between consecutive terms is constant (d). So a_n = a_1 + (n-1)d. In a geometric sequence, the ratio between consecutive terms is constant (r). So a_n = a_1 · r^(n-1). To tell them apart: subtract consecutive terms: if the difference is constant, it's arithmetic; if the ratio is constant, it's geometric." },
       { type: "text", content: "Sum of the first n terms: Arithmetic: S_n = n(a_1 + a_n)/2, or S_n = n/2 (2a_1 + (n-1)d). Geometric: S_n = a_1(1 - r^n)/(1 - r) when r ≠ 1." },
       { type: "example", content: "3, 7, 11, 15,... is arithmetic with d = 4. So a_10 = 3 + 9(4) = 39. The sum of the first 10 terms: S_10 = 10(3 + 39)/2 = 210." },
-      { type: "tip", content: "SAT TIP: Find the pattern first—constant difference (arithmetic) or constant ratio (geometric). Then use the right formula. For arithmetic, d = second term - first term." },
+      { type: "tip", content: "SAT TIP: Find the pattern first: constant difference (arithmetic) or constant ratio (geometric). Then use the right formula. For arithmetic, d = second term - first term." },
       { type: "text", content: "Arithmetic: a_n = a_1 + (n-1)d. Geometric: a_n = a_1 · r^(n-1). For the sum of the first n terms: arithmetic S_n = n(a_1 + a_n)/2; geometric S_n = a_1(1 - r^n)/(1 - r) when r ≠ 1." },
       { type: "example", content: "Geometric: 2, 6, 18, 54,... ratio r = 3. a_5 = 2(3^4) = 162. Sum of first 4: S = 2(1-3^4)/(1-3) = 2(1-81)/(-2) = 80." },
       { type: "formula", content: "To tell arithmetic from geometric: subtract consecutive terms for arithmetic (constant d); divide for geometric (constant r)." },
@@ -1789,14 +1789,14 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 12,
     content: [
       { type: "heading", content: "Run-ons, Fragments & Comma Splices" },
-      { type: "text", content: "A complete sentence has at least one subject and one verb and expresses a complete thought. A fragment is missing a subject, verb, or complete thought. A run-on is two or more independent clauses joined without proper punctuation or a conjunction. A comma splice is two independent clauses joined only by a comma—that's incorrect; you need a period, semicolon, or conjunction (and, but, because, etc.)." },
+      { type: "text", content: "A complete sentence has at least one subject and one verb and expresses a complete thought. A fragment is missing a subject, verb, or complete thought. A run-on is two or more independent clauses joined without proper punctuation or a conjunction. A comma splice is two independent clauses joined only by a comma. That's incorrect; you need a period, semicolon, or conjunction (and, but, because, etc.)." },
       { type: "text", content: "To fix run-ons and comma splices: use a period to make two sentences; use a semicolon if the two clauses are closely related; or add a conjunction (and, but, so, because) with a comma if needed. Reading the sentence aloud often helps you hear where the break should be." },
       { type: "example", content: "Comma splice: 'I ran, I was late.' Fix: 'I ran; I was late.' or 'I ran, and I was late.' or 'I ran. I was late.'" },
       { type: "tip", content: "SAT TIP: Fix run-ons and comma splices with a period, semicolon, or conjunction. Fragments need a subject, verb, or the missing piece of the thought. Read aloud to hear the boundary." },
       { type: "text", content: "Independent clause = can stand alone as a sentence (has subject and verb, complete thought). Dependent clause = cannot stand alone (often starts with although, because, when, if, that). Two independent clauses need a period, semicolon, or comma + conjunction." },
       { type: "example", content: "Run-on: 'I ran I was late.' Fix: 'I ran. I was late.' or 'I ran; I was late.' or 'I ran, and I was late.' Comma splice: 'I ran, I was late.' Same fixes." },
       { type: "formula", content: "Semicolon use: between two closely related independent clauses (no conjunction). Colon use: after an independent clause to introduce a list, explanation, or quote. Don't use a colon after a fragment." },
-      { type: "text", content: "Fragment examples: 'Because I was tired.' (no main clause). 'Running in the park.' (no subject—who was running?). Fix by adding the missing subject, verb, or main clause." },
+      { type: "text", content: "Fragment examples: 'Because I was tired.' (no main clause). 'Running in the park.' (no subject: who was running?). Fix by adding the missing subject, verb, or main clause." },
       { type: "tip", content: "If you see two sentences stuck together with only a comma, it's a comma splice. Add a period, semicolon, or conjunction (and, but, so, because) as appropriate." },
     ],
     question: {
@@ -1882,11 +1882,11 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 12,
     content: [
       { type: "heading", content: "Comparing Like Things" },
-      { type: "text", content: "Comparisons must be logical: compare like things. 'This book is better than any book' is wrong because 'any book' includes the book itself—you're comparing the book to itself. Use 'any other book' to exclude it. Similarly, 'faster than any runner' should be 'faster than any other runner' when comparing one runner to the rest." },
+      { type: "text", content: "Comparisons must be logical: compare like things. 'This book is better than any book' is wrong because 'any book' includes the book itself; you're comparing the book to itself. Use 'any other book' to exclude it. Similarly, 'faster than any runner' should be 'faster than any other runner' when comparing one runner to the rest." },
       { type: "text", content: "Also watch for incomplete or ambiguous comparisons. 'Her score was higher than his' (comparing scores) is correct; 'higher than him' is wrong when you mean his score. Make sure the grammar after 'than' or 'as' matches what you're comparing (e.g., scores to score, not person to score)." },
       { type: "example", content: "Wrong: 'This car is better than any car on the lot.' Right: 'This car is better than any other car on the lot.'" },
       { type: "tip", content: "SAT TIP: Use 'any other' to exclude the thing being compared. The noun or phrase after 'than' or 'as' must match the first part of the comparison. Compare scores to scores, not to people, when that's the meaning." },
-      { type: "text", content: "Illogical comparison: 'Her score was higher than his' compares her score to his score (correct). 'Her score was higher than him' is wrong if you mean his score—compare score to score. Sometimes you need 'than his' or 'than that of John.'" },
+      { type: "text", content: "Illogical comparison: 'Her score was higher than his' compares her score to his score (correct). 'Her score was higher than him' is wrong if you mean his score; compare score to score. Sometimes you need 'than his' or 'than that of John.'" },
       { type: "example", content: "Wrong: 'The salary of teachers is lower than doctors.' Right: 'The salary of teachers is lower than that of doctors' or '...than the salary of doctors.' Compare like to like." },
       { type: "formula", content: "Better than any other + singular noun. Faster than all the other + plural. As fast as (or faster than) any other runner. Never compare a thing to a person when you mean the person's thing." },
       { type: "text", content: "Double comparison: 'more better' is wrong (use 'better' or 'more'); 'most unique' is often considered wrong (unique is absolute). 'Between the two' not 'among the two'; 'among' for three or more." },
@@ -1975,12 +1975,12 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 15,
     content: [
       { type: "heading", content: "Time Management & Approach" },
-      { type: "text", content: "A strong approach: read the passage first to get the main idea and structure. Don't skim so fast that you miss the argument or narrative. Then tackle the questions. For evidence-based (paired) questions, answer the main question first, then choose the line that best supports that answer—doing it in reverse often leads to wrong choices." },
+      { type: "text", content: "A strong approach: read the passage first to get the main idea and structure. Don't skim so fast that you miss the argument or narrative. Then tackle the questions. For evidence-based (paired) questions, answer the main question first, then choose the line that best supports that answer; doing it in reverse often leads to wrong choices." },
       { type: "text", content: "Use process of elimination: cross out answers that are clearly wrong, too broad, too narrow, or not supported by the passage. Don't overthink: if an answer is directly stated or clearly implied, it's often correct. 'NO CHANGE' and the shortest grammatically correct choice are right more often than you might think." },
-      { type: "example", content: "If a question asks for the main purpose of a paragraph, look at what that paragraph actually does in the passage—introduces, supports, contrasts, or concludes—and match that to the choices." },
+      { type: "example", content: "If a question asks for the main purpose of a paragraph, look at what that paragraph actually does in the passage, introduces, supports, contrasts, or concludes, and match that to the choices." },
       { type: "tip", content: "SAT TIP: For paired questions, answer the main question first, then pick the line that proves it. Eliminate wrong answers. Don't second-guess a clear, supported answer." },
       { type: "text", content: "Pacing: you have limited time per passage. If you're stuck on one question, mark it and move on; come back if time allows. It's better to answer all questions you can than to get stuck on one. Practice with a timer to build speed." },
-      { type: "example", content: "When a question says 'the author mentions X in order to,' don't just find where X appears—identify what role that mention plays: support, contrast, example, or transition. Match that role to the choices." },
+      { type: "example", content: "When a question says 'the author mentions X in order to,' don't just find where X appears; identify what role that mention plays: support, contrast, example, or transition. Match that role to the choices." },
       { type: "text", content: "Dual passages: read passage 1, then passage 2. Note how they relate (agree, disagree, different angles). Questions may ask about one passage, the other, or both. For 'both passages' questions, have a clear sense of each author's point." },
       { type: "text", content: "Vocabulary-in-context: the answer must fit this sentence and paragraph. Eliminate definitions that don't make sense in context even if they're correct in other uses. Substitute each choice into the sentence mentally." },
       { type: "tip", content: "Review wrong answers after practice: did you misread the passage, misread the question, or fall for a trap? Learning your pattern helps you improve." },
@@ -2079,7 +2079,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Checkpoint Review (Lessons 1–3)" },
       { type: "text", content: "You've covered linear equations (isolate the variable with inverse operations), systems of equations (substitution and elimination), and quadratic functions (parabolas, vertex, factoring, quadratic formula). This quick review helps lock in the main ideas before moving on." },
-      { type: "text", content: "Linear: same operations on both sides; watch for distributing and combining like terms. Systems: one solution (x, y) must satisfy both equations—always check. Quadratics: try factoring first; use x = -b/(2a) for the vertex; discriminant b² - 4ac tells you how many real roots." },
+      { type: "text", content: "Linear: same operations on both sides; watch for distributing and combining like terms. Systems: one solution (x, y) must satisfy both equations; always check. Quadratics: try factoring first; use x = -b/(2a) for the vertex; discriminant b² - 4ac tells you how many real roots." },
       { type: "tip", content: "SAT TIP: Plug answer choices back in when stuck. For systems, verify your (x, y) in both equations. For quadratics, memorize the quadratic formula." },
     ],
     question: {
@@ -2174,7 +2174,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Checkpoint Review (Lessons 14–16)" },
       { type: "text", content: "You've covered expression of ideas (clarity, conciseness, transitions), main idea and purpose (synthesize the whole passage; inform vs. persuade vs. entertain), and rhetorical analysis (why the author made specific choices; effect on the reader)." },
-      { type: "text", content: "Choose the shortest correct answer when meaning is preserved. Main idea = overall point, not one detail. Rhetoric = how the author says it—emphasis, contrast, support, tone." },
+      { type: "text", content: "Choose the shortest correct answer when meaning is preserved. Main idea = overall point, not one detail. Rhetoric = how the author says it: emphasis, contrast, support, tone." },
       { type: "tip", content: "SAT TIP: Cut wordy phrases. Main idea answers synthesize the passage. For 'why did the author...' focus on effect or purpose." },
     ],
     question: {
@@ -2283,9 +2283,9 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 20,
     content: [
       { type: "heading", content: "Systems and Linear Inequalities" },
-      { type: "text", content: "Systems of equations can have one solution (lines intersect), no solution (parallel lines), or infinitely many (same line). You can also meet systems of inequalities: the solution is the region where all inequalities are true—often the feasible region in optimization problems." },
+      { type: "text", content: "Systems of equations can have one solution (lines intersect), no solution (parallel lines), or infinitely many (same line). You can also meet systems of inequalities: the solution is the region where all inequalities are true, often the feasible region in optimization problems." },
       { type: "text", content: "For inequalities, graph each line (dashed for < or >, solid for ≤ or ≥), shade the correct side (test a point), then the solution set is where the shaded regions overlap. For linear programming, the max or min of an objective function often occurs at a corner of the feasible region." },
-      { type: "example", content: "System 2x + y = 10 and 4x + 2y = 20. The second equation is 2×(first), so they're the same line—infinitely many solutions." },
+      { type: "example", content: "System 2x + y = 10 and 4x + 2y = 20. The second equation is 2×(first), so they're the same line, infinitely many solutions." },
       { type: "formula", content: "For inequalities: flip the sign when multiplying or dividing by a negative. Graph boundaries, then shade." },
       { type: "tip", content: "SAT TIP: One solution = lines cross. No solution = parallel. Infinite = same line. For inequalities, test (0,0) or another point to see which side to shade." },
     ],
@@ -2304,7 +2304,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Quadratics in Depth" },
       { type: "text", content: "Every quadratic y = ax² + bx + c graphs as a parabola. The vertex is at x = -b/(2a); plug that x into the equation to get the y-coordinate. The parabola opens up if a > 0 and down if a < 0. The axis of symmetry is the vertical line x = -b/(2a)." },
-      { type: "text", content: "To find x-intercepts, set y = 0 and solve ax² + bx + c = 0. Factoring, completing the square, or the quadratic formula all work. The sum of the roots is -b/a and the product is c/a—useful to check your answers. The discriminant b² - 4ac tells you: positive = 2 real roots, zero = 1 (repeated), negative = 0 real roots." },
+      { type: "text", content: "To find x-intercepts, set y = 0 and solve ax² + bx + c = 0. Factoring, completing the square, or the quadratic formula all work. The sum of the roots is -b/a and the product is c/a, useful to check your answers. The discriminant b² - 4ac tells you: positive = 2 real roots, zero = 1 (repeated), negative = 0 real roots." },
       { type: "formula", content: "Vertex: x = -b/(2a). Roots: x = (-b ± √(b²-4ac))/(2a). Sum of roots = -b/a, product = c/a." },
       { type: "example", content: "y = x² - 4x + 3. Vertex at x = 4/2 = 2, y = 4 - 8 + 3 = -1. Factor: (x-1)(x-3)=0, so roots 1 and 3. Sum = 4 = -(-4)/1 ✓" },
       { type: "tip", content: "SAT TIP: Vertex form y = a(x-h)² + k has vertex (h,k). Completing the square converts standard to vertex form. Use sum/product of roots to verify." },
@@ -2361,7 +2361,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 20,
     content: [
       { type: "heading", content: "Evidence and Argument in Depth" },
-      { type: "text", content: "Strong arguments state a claim and support it with relevant evidence. On the SAT, you'll identify the best evidence for a claim, or the claim best supported by given evidence. The evidence must directly support the claim—not just be about the same topic. Weak choices are often too broad, too narrow, or slightly off-topic." },
+      { type: "text", content: "Strong arguments state a claim and support it with relevant evidence. On the SAT, you'll identify the best evidence for a claim, or the claim best supported by given evidence. The evidence must directly support the claim, not just be about the same topic. Weak choices are often too broad, too narrow, or slightly off-topic." },
       { type: "text", content: "Paired questions are very common: Q1 asks for an inference or conclusion; Q2 asks which lines best support your answer to Q1. Always answer Q1 first, then choose the quote that actually proves that answer. If you pick the evidence first, you might be led to a wrong main answer." },
       { type: "example", content: "Claim: 'The author believes the policy failed.' Best evidence: a sentence where the author states or clearly implies that the policy failed. A sentence that only describes the policy is not enough." },
       { type: "tip", content: "SAT TIP: Main answer first, then evidence. Eliminate evidence that doesn't directly prove your chosen answer. Cross-check: does this quote actually support my answer?" },
@@ -2405,7 +2405,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Standard English Conventions in Depth" },
       { type: "text", content: "Subject-verb agreement: the verb must match the subject in number. Interrupting phrases (e.g. 'of the students,' 'as well as his friends') don't change the subject. 'Each,' 'every,' 'neither,' 'either' are singular. With 'or' or 'nor,' the verb agrees with the closest subject." },
-      { type: "text", content: "Pronoun clarity: every pronoun should clearly refer to one noun. Avoid ambiguity (e.g. 'When the teacher met the student, he was happy'—who is he?). Parallel structure: items in a list or comparison must be in the same form: 'to run, to swim, and to bike' not 'to run, swimming, and to bike.' Punctuation: commas set off nonessential clauses; semicolons join independent clauses; apostrophes show possession or contraction." },
+      { type: "text", content: "Pronoun clarity: every pronoun should clearly refer to one noun. Avoid ambiguity (e.g. 'When the teacher met the student, he was happy', who is he?). Parallel structure: items in a list or comparison must be in the same form: 'to run, to swim, and to bike' not 'to run, swimming, and to bike.' Punctuation: commas set off nonessential clauses; semicolons join independent clauses; apostrophes show possession or contraction." },
       { type: "example", content: "Wrong: 'The list of items were long.' Right: 'The list of items was long.' Subject is 'list' (singular)." },
       { type: "tip", content: "SAT TIP: Find the true subject; ignore phrases between subject and verb. NO CHANGE is correct about 25%. When in doubt, choose the shortest grammatically correct option." },
     ],
@@ -2428,7 +2428,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 20,
     content: [
       { type: "heading", content: "Main Idea and Passage Structure in Depth" },
-      { type: "text", content: "The main idea (central idea) is the primary point the passage makes as a whole. It's usually not stated in one sentence—you synthesize it from the full passage. Wrong answers often: focus on one paragraph or detail, are too broad (could apply to many texts), or are too narrow (only part of the passage). The author's purpose is their goal: to inform, explain, persuade, argue, or entertain. Structure questions ask how the passage is organized: problem-solution, cause-effect, compare-contrast, chronological, or argument with evidence." },
+      { type: "text", content: "The main idea (central idea) is the primary point the passage makes as a whole. It's usually not stated in one sentence; you synthesize it from the full passage. Wrong answers often: focus on one paragraph or detail, are too broad (could apply to many texts), or are too narrow (only part of the passage). The author's purpose is their goal: to inform, explain, persuade, argue, or entertain. Structure questions ask how the passage is organized: problem-solution, cause-effect, compare-contrast, chronological, or argument with evidence." },
       { type: "text", content: "When asked about the function of a paragraph or sentence, think about its role: does it introduce, support, contrast, qualify, summarize, or conclude? The answer should describe that role in the overall argument or narrative." },
       { type: "example", content: "If the passage argues that a policy is harmful and gives three reasons, the main idea is that the policy is harmful (and the structure is claim + three supporting reasons)." },
       { type: "tip", content: "SAT TIP: Main idea = whole passage. Purpose = inform / persuade / entertain. Function = role of a part (introduce, support, contrast, conclude)." },
@@ -2452,7 +2452,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 20,
     content: [
       { type: "heading", content: "Full Reading Strategy" },
-      { type: "text", content: "Read the passage at a steady pace—not so fast that you miss the argument or narrative. Note the main idea and how each paragraph contributes. For literature passages, track characters and tone. For science/social studies, track the central claim and evidence. Then answer questions in order; many refer to specific lines, so you can go back and re-read those sections." },
+      { type: "text", content: "Read the passage at a steady pace, not so fast that you miss the argument or narrative. Note the main idea and how each paragraph contributes. For literature passages, track characters and tone. For science/social studies, track the central claim and evidence. Then answer questions in order; many refer to specific lines, so you can go back and re-read those sections." },
       { type: "text", content: "For paired questions, always answer the main question first. Use process of elimination: cross out choices that are wrong, too broad, too narrow, or not supported. Don't overthink: if the passage clearly supports an answer, it's often correct. 'NO CHANGE' and the shortest correct option are right more often than students expect. Save time by not second-guessing when you're confident." },
       { type: "example", content: "If a question asks what the author would most likely agree with, find the answer that is consistent with the passage's main point and tone. Eliminate answers that contradict the passage or go beyond what it says." },
       { type: "tip", content: "SAT TIP: Main answer first for pairs. Eliminate wrong answers. Don't overthink clear, supported answers. Manage time by moving on from tough questions and returning if time allows." },
@@ -2477,7 +2477,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Remainder Theorem and Factor Theorem" },
       { type: "text", content: "When you divide polynomial P(x) by (x - k), the remainder equals P(k). So to find the remainder when dividing by (x - 3), just evaluate P(3). The Factor Theorem: (x - k) is a factor of P(x) if and only if P(k) = 0. So finding roots is equivalent to finding linear factors." },
-      { type: "text", content: "These lead to harder problems: given conditions on P(x) when evaluated at specific points, find coefficients or another value. For example, if P(x) leaves remainder 2 when divided by (x-1) and remainder 5 when divided by (x-2), then P(1)=2 and P(2)=5—use that to set up equations in the unknown coefficients." },
+      { type: "text", content: "These lead to harder problems: given conditions on P(x) when evaluated at specific points, find coefficients or another value. For example, if P(x) leaves remainder 2 when divided by (x-1) and remainder 5 when divided by (x-2), then P(1)=2 and P(2)=5; use that to set up equations in the unknown coefficients." },
       { type: "formula", content: "Remainder: P(x) ÷ (x - k) → remainder = P(k). Factor: (x - k) is factor ⟺ P(k) = 0." },
       { type: "example", content: "P(x) = x³ + ax² + bx - 6. If (x+2) is a factor, then P(-2)=0: -8 + 4a - 2b - 6 = 0 → 4a - 2b = 14. If P(1)=0 too, then 1 + a + b - 6 = 0 → a + b = 5. Solve the system for a and b." },
       { type: "tip", content: "SAT TIP: Substitute the root (or the value that makes the divisor zero) into P(x). Set up equations and solve for unknowns. Watch signs: divisor (x - k) means use x = k; (x + 3) means use x = -3." },
@@ -2536,7 +2536,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 25,
     content: [
       { type: "heading", content: "Rational and Radical Equations" },
-      { type: "text", content: "Rational equations: clear denominators by multiplying by the LCD, then solve. You must check for extraneous solutions—values that make a denominator zero are not allowed. Radical equations: isolate the radical, square both sides, solve, then check in the original (squaring can create false solutions)." },
+      { type: "text", content: "Rational equations: clear denominators by multiplying by the LCD, then solve. You must check for extraneous solutions, values that make a denominator zero are not allowed. Radical equations: isolate the radical, square both sides, solve, then check in the original (squaring can create false solutions)." },
       { type: "text", content: "For √(f(x)) = g(x), we need f(x) ≥ 0 and g(x) ≥ 0 before squaring. After solving, plug back in. For rational equations, list restrictions first (denominator ≠ 0), then multiply through and solve. Cross-multiplication for single fraction = single fraction: a/b = c/d ⟺ ad = bc." },
       { type: "example", content: "Solve 1/(x-2) + 1/(x+2) = 4/(x²-4). LCD (x²-4). x≠±2. Multiply: (x+2)+(x-2)=4 → 2x=4 → x=2. But x=2 is excluded. So no solution." },
       { type: "tip", content: "SAT TIP: Always state restrictions. After solving rational or radical equations, verify each solution in the original equation and discard extraneous ones." },
@@ -2556,7 +2556,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Complex Word Problems" },
       { type: "text", content: "The hardest SAT word problems combine: multiple rates (work, distance, mixture), constraints (inequalities, integer conditions), or multi-step relationships. Work problems: rates add (1/t₁ + 1/t₂ = 1/t_combined). Distance: two travelers meeting or chasing. Mixture: concentration × volume = amount of substance; two equations (total volume, total amount)." },
-      { type: "text", content: "Strategy: define variables clearly, write one equation per relationship, then solve the system. For 'how many of each' with a constraint (e.g. more adults than children), solve generally then apply the constraint. Percent change over multiple steps: apply each step in order (e.g. 10% increase then 10% decrease does not return to original—it's 0.99 of original)." },
+      { type: "text", content: "Strategy: define variables clearly, write one equation per relationship, then solve the system. For 'how many of each' with a constraint (e.g. more adults than children), solve generally then apply the constraint. Percent change over multiple steps: apply each step in order (e.g. 10% increase then 10% decrease does not return to original; it's 0.99 of original)." },
       { type: "example", content: "Pipe A fills a tank in 6 hr, B in 4 hr. Together: 1/6 + 1/4 = 5/12 per hour, so 12/5 = 2.4 hours to fill." },
       { type: "tip", content: "SAT TIP: For work, use rates. For mixture, use amount = concentration × quantity. Re-read for 'more than,' 'less than,' and integer requirements." },
     ],
@@ -2574,7 +2574,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 25,
     content: [
       { type: "heading", content: "Synthesizing Two Passages" },
-      { type: "text", content: "Paired passages present two texts (often two authors or two perspectives). Questions ask: how do the authors agree or disagree? What would Author 1 think of Author 2's claim? Which statement is supported by both? The hardest items require you to hold both arguments in mind and compare them precisely—not just summarize each passage." },
+      { type: "text", content: "Paired passages present two texts (often two authors or two perspectives). Questions ask: how do the authors agree or disagree? What would Author 1 think of Author 2's claim? Which statement is supported by both? The hardest items require you to hold both arguments in mind and compare them precisely, not just summarize each passage." },
       { type: "text", content: "Wrong answers often: describe only one passage, overstate agreement or disagreement, or attribute the wrong view to the wrong author. Before answering, label each passage (e.g. 'P1: policy helps; P2: policy hurts') and then see which choice matches the relationship." },
       { type: "example", content: "P1 argues that funding increases test scores; P2 argues that funding has no effect. A question 'Both authors would agree that' cannot say 'funding raises scores' (P2 disagrees) or 'funding has no effect' (P1 disagrees). They might agree that 'the issue is important to study.'" },
       { type: "tip", content: "SAT TIP: For 'both would agree,' the answer must be true for BOTH. For 'Author 1 would respond to Author 2 by,' use P1's actual views to predict the response." },
@@ -2636,9 +2636,9 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 25,
     content: [
       { type: "heading", content: "Tone and Implied Attitude" },
-      { type: "text", content: "Tone is the author's attitude toward the subject or audience: skeptical, enthusiastic, neutral, critical, nostalgic, etc. It's often implied rather than stated—through word choice, sentence structure, or what the author chooses to include or omit. Hard questions ask for subtle distinctions: 'qualified approval' vs 'strong endorsement,' 'mild skepticism' vs 'dismissal,' 'ironic' vs 'literal.'" },
-      { type: "text", content: "Evidence for tone: loaded words, rhetorical questions, concessions ('admittedly,' 'to be sure') followed by a contrast, understatement or overstatement. Don't confuse the tone of a quoted character with the author's tone. Don't assume criticism just because drawbacks are mentioned—the author might be balanced." },
-      { type: "example", content: "'The proposal is not without merit' suggests qualified approval—acknowledges some value but implies limits. 'The proposal is brilliant' is strong endorsement." },
+      { type: "text", content: "Tone is the author's attitude toward the subject or audience: skeptical, enthusiastic, neutral, critical, nostalgic, etc. It's often implied rather than stated, through word choice, sentence structure, or what the author chooses to include or omit. Hard questions ask for subtle distinctions: 'qualified approval' vs 'strong endorsement,' 'mild skepticism' vs 'dismissal,' 'ironic' vs 'literal.'" },
+      { type: "text", content: "Evidence for tone: loaded words, rhetorical questions, concessions ('admittedly,' 'to be sure') followed by a contrast, understatement or overstatement. Don't confuse the tone of a quoted character with the author's tone. Don't assume criticism just because drawbacks are mentioned; the author might be balanced." },
+      { type: "example", content: "'The proposal is not without merit' suggests qualified approval, acknowledges some value but implies limits. 'The proposal is brilliant' is strong endorsement." },
       { type: "tip", content: "SAT TIP: Pick the tone word that fits the whole passage, not one sentence. If two choices are close, choose the one that is more precisely supported (e.g. 'skeptical' over 'negative' if the author questions rather than attacks)." },
     ],
     question: {
@@ -2746,7 +2746,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 25,
     content: [
       { type: "heading", content: "What Must Be True?" },
-      { type: "text", content: "Inference questions ask what follows from the passage. The hardest ask for what must be true—not what could be true or what the author might believe, but what is necessarily supported by the text. Wrong answers: too strong (the passage doesn't go that far), too broad (beyond the scope), or restating a detail without inference." },
+      { type: "text", content: "Inference questions ask what follows from the passage. The hardest ask for what must be true, not what could be true or what the author might believe, but what is necessarily supported by the text. Wrong answers: too strong (the passage doesn't go that far), too broad (beyond the scope), or restating a detail without inference." },
       { type: "text", content: "Strategy: treat the passage as the only evidence. If the passage says 'all participants improved,' you can infer 'at least one participant improved' but not 'all people would improve.' If it says 'X may cause Y,' you cannot infer 'X always causes Y.' Necessary means: if the passage is true, this statement must also be true." },
       { type: "example", content: "Passage: 'The study found a correlation between sleep and grades.' Must be true: there was a study; sleep and grades were related in the data. Not necessarily true: sleep causes better grades (correlation ≠ causation)." },
       { type: "tip", content: "SAT TIP: Eliminate choices that require an unsupported leap. The right answer is the one that follows with the least additional assumption. When in doubt, ask: does the passage guarantee this?" },
@@ -2771,7 +2771,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Building Polynomials from Roots and Vieta's Formulas" },
       { type: "text", content: "If r and s are roots of x² + bx + c = 0, then r + s = -b and rs = c. For cubic x³ + ax² + bx + c with roots p, q, r: p+q+r = -a, pq+pr+qr = b, pqr = -c. So you can go from roots to coefficients or vice versa. When a root is repeated (e.g. 2, 2, -3), the factor (x-2) appears twice." },
-      { type: "text", content: "Hard problems: given conditions on roots (e.g. one root is double another), set up equations. Or: polynomial P has roots 1 and 4, and P(3) = 10—find P (write P(x) = a(x-1)(x-4), use P(3)=10 to find a). Or find the coefficient of x in the expanded form using sum/product of roots." },
+      { type: "text", content: "Hard problems: given conditions on roots (e.g. one root is double another), set up equations. Or: polynomial P has roots 1 and 4, and P(3) = 10; find P (write P(x) = a(x-1)(x-4), use P(3)=10 to find a). Or find the coefficient of x in the expanded form using sum/product of roots." },
       { type: "formula", content: "Quadratic roots r,s: r+s = -b, rs = c. Cubic roots p,q,r: sum = -a, sum of products = b, product = -c." },
       { type: "example", content: "Cubic with roots 1, 2, 3: (x-1)(x-2)(x-3). Sum = 6, so x² coefficient is -6. Product = 6, constant = -6." },
       { type: "tip", content: "SAT TIP: Use Vieta to avoid expanding. For 'what is the coefficient of x?' in (x-2)(x+3)(x-5), use sum of roots = 4, sum of pairwise products = -6+10-15 = -11, product = 30." },
@@ -2864,12 +2864,12 @@ export const LESSONS: Record<string, LessonData> = {
   },
   "50": {
     id: "50",
-    title: "Expert: Dual Passage—Author Conflict",
+    title: "Expert: Dual Passage, Author Conflict",
     xpReward: 30,
     content: [
       { type: "heading", content: "Which Claim Would Author 1 Reject?" },
       { type: "text", content: "The hardest dual-passage items ask you to apply one author's view to the other's claims. 'Author 1 would find Author 2's argument most weakened by which of the following?' or 'Which of Author 2's claims would Author 1 most strongly dispute?' You must know each author's position precisely and identify the claim that directly contradicts it." },
-      { type: "text", content: "Wrong answers: a claim Author 2 doesn't make, a claim both might accept, or a minor point. The right answer is a central claim of Passage 2 that conflicts with a central claim of Passage 1. Sometimes the question is phrased as 'Author 1 would object to Author 2's argument on the grounds that...'—then the answer states the objection Author 1 would raise." },
+      { type: "text", content: "Wrong answers: a claim Author 2 doesn't make, a claim both might accept, or a minor point. The right answer is a central claim of Passage 2 that conflicts with a central claim of Passage 1. Sometimes the question is phrased as 'Author 1 would object to Author 2's argument on the grounds that...'; then the answer states the objection Author 1 would raise." },
       { type: "example", content: "P1: Funding alone won't fix schools. P2: More funding is the key. Author 1 would most dispute: 'More funding is the key' (directly contradicts P1)." },
       { type: "tip", content: "SAT TIP: State each author's main claim in one sentence. The answer is the choice that contradicts one author's view while being something the other author says or implies." },
     ],
@@ -2892,10 +2892,10 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 30,
     content: [
       { type: "heading", content: "Why Does the Tone or Focus Shift?" },
-      { type: "text", content: "Passages often shift: from general to specific, from problem to solution, from historical to current, or from neutral to critical. Questions ask why the author shifts tone or topic—e.g. 'The tone in paragraph 3 differs from that in paragraph 1 primarily because the author...' The answer describes the rhetorical purpose: to introduce a counterexample, to qualify the earlier claim, to turn to evidence, or to conclude." },
+      { type: "text", content: "Passages often shift: from general to specific, from problem to solution, from historical to current, or from neutral to critical. Questions ask why the author shifts tone or topic, e.g. 'The tone in paragraph 3 differs from that in paragraph 1 primarily because the author...' The answer describes the rhetorical purpose: to introduce a counterexample, to qualify the earlier claim, to turn to evidence, or to conclude." },
       { type: "text", content: "Don't just label the tone (e.g. 'skeptical'); say why it changes. Often the shift reflects: moving from claim to evidence, from other views to the author's view, or from description to evaluation. The right answer ties the shift to the passage's argumentative structure." },
       { type: "example", content: "Para 1: hopeful about a policy. Para 3: lists drawbacks. The shift serves to present a more balanced or critical view after the initial optimism." },
-      { type: "tip", content: "SAT TIP: Link the shift to the passage's organization—introduction of evidence, concession, refutation, or conclusion." },
+      { type: "tip", content: "SAT TIP: Link the shift to the passage's organization: introduction of evidence, concession, refutation, or conclusion." },
     ],
     question: {
       id: "q51",
@@ -2917,7 +2917,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Where Does This Sentence Belong?" },
       { type: "text", content: "You're given a sentence that could be inserted into the passage and four positions (e.g. after sentence 2, 4, 6, or 8). The right place is where the sentence fits logically and grammatically: pronouns have clear antecedents, the idea follows from the previous sentence and leads to the next, and no other placement preserves the flow. Wrong places often create a broken reference ('this' with nothing to refer to) or put the effect before the cause." },
-      { type: "text", content: "Strategy: read the sentence to be placed—what does it assume is already said? What does it set up? Then check each position. Does the sentence before introduce the idea? Does the sentence after continue from it? Eliminate positions where 'this' or 'such' would have no antecedent, or where the order of ideas becomes illogical." },
+      { type: "text", content: "Strategy: read the sentence to be placed: what does it assume is already said? What does it set up? Then check each position. Does the sentence before introduce the idea? Does the sentence after continue from it? Eliminate positions where 'this' or 'such' would have no antecedent, or where the order of ideas becomes illogical." },
       { type: "example", content: "'This finding surprised the researchers.' It must come after a sentence that states the finding. It cannot start a paragraph unless 'this' refers to the previous paragraph." },
       { type: "tip", content: "SAT TIP: Trace pronouns and logical order. The inserted sentence should link the one before and the one after." },
     ],
@@ -2940,7 +2940,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 30,
     content: [
       { type: "heading", content: "Identifying the Flaw in the Argument" },
-      { type: "text", content: "Common flaws: (1) Correlation vs. causation—A and B occur together, so A causes B. (2) Necessary vs. sufficient—confusing 'if A then B' with 'only A causes B.' (3) Hasty generalization—one example used for a broad claim. (4) Circular reasoning—conclusion assumed in the premise. (5) False dichotomy—assuming only two options. (6) Ad hominem—attacking the person, not the argument. The question asks which best describes the flaw." },
+      { type: "text", content: "Common flaws: (1) Correlation vs. causation: A and B occur together, so A causes B. (2) Necessary vs. sufficient: confusing 'if A then B' with 'only A causes B.' (3) Hasty generalization: one example used for a broad claim. (4) Circular reasoning: conclusion assumed in the premise. (5) False dichotomy: assuming only two options. (6) Ad hominem: attacking the person, not the argument. The question asks which best describes the flaw." },
       { type: "text", content: "The right answer names the specific flaw and ties it to the argument. 'The argument assumes that what is true of the part is true of the whole' (composition/division). 'The argument confuses a necessary condition with a sufficient one.' Avoid answers that are too vague or that describe a different flaw." },
       { type: "example", content: "Argument: 'She got the job. She had the best résumé. So the best résumé got her the job.' Flaw: assumes the résumé was the cause (could be coincidence, or other factors)." },
       { type: "tip", content: "SAT TIP: Find the jump in logic from evidence to conclusion. The flaw is the unwarranted assumption or confusion that makes that jump invalid." },
@@ -3020,7 +3020,7 @@ export const LESSONS: Record<string, LessonData> = {
   },
   "57": {
     id: "57",
-    title: "1500+: Volume—Sphere, Cone, Pyramid",
+    title: "1500+: Volume, Sphere, Cone, Pyramid",
     xpReward: 30,
     content: [
       { type: "heading", content: "3D Volume Formulas" },
@@ -3043,7 +3043,7 @@ export const LESSONS: Record<string, LessonData> = {
     content: [
       { type: "heading", content: "Similar Figures" },
       { type: "text", content: "Two figures are similar if corresponding angles are equal and sides are proportional. Scale factor k: lengths multiply by k, areas by k², volumes by k³. So if a map scale is 1:1000, 1 cm on the map = 1000 cm in reality; area scale 1:1,000,000." },
-      { type: "example", content: "Triangles with sides 3,4,5 and 6,8,10 are similar (scale 2). Areas 6 and 24—ratio 1:4 = 1:2²." },
+      { type: "example", content: "Triangles with sides 3,4,5 and 6,8,10 are similar (scale 2). Areas 6 and 24, ratio 1:4 = 1:2²." },
       { type: "tip", content: "SAT TIP: Set up proportion for corresponding sides. For area/volume, use scale factor squared/cubed." },
     ],
     question: {
@@ -3157,7 +3157,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 35,
     content: [
       { type: "heading", content: "Putting It All Together for 750+ Math" },
-      { type: "text", content: "To score 750+: (1) Know every topic—algebra, quadratics, functions, geometry, trig, data, word problems. (2) Read carefully: 'x increased by 50%' is different from '50% of x.' (3) Grid-in: no negative answers for most, round as instructed. (4) Use the reference sheet for formulas. (5) Eliminate wrong answers; plug in when stuck. (6) Manage time: don't get stuck on one question; mark and return." },
+      { type: "text", content: "To score 750+: (1) Know every topic: algebra, quadratics, functions, geometry, trig, data, word problems. (2) Read carefully: 'x increased by 50%' is different from '50% of x.' (3) Grid-in: no negative answers for most, round as instructed. (4) Use the reference sheet for formulas. (5) Eliminate wrong answers; plug in when stuck. (6) Manage time: don't get stuck on one question; mark and return." },
       { type: "tip", content: "SAT TIP: Re-read the question before submitting. Check that you answered what was asked (value of x vs value of 2x, etc.)." },
     ],
     question: {
@@ -3179,7 +3179,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 30,
     content: [
       { type: "heading", content: "Modifiers Must Refer Clearly" },
-      { type: "text", content: "A modifying phrase at the start of a sentence should refer to the subject that immediately follows. 'Running to the bus, the bag was left behind' is wrong (the bag didn't run)—correct: 'Running to the bus, I left the bag behind.' Misplaced: 'She gave a sandwich to the child wrapped in foil' (sounds like the child was wrapped)—'She gave the child a sandwich wrapped in foil.'" },
+      { type: "text", content: "A modifying phrase at the start of a sentence should refer to the subject that immediately follows. 'Running to the bus, the bag was left behind' is wrong (the bag didn't run); correct: 'Running to the bus, I left the bag behind.' Misplaced: 'She gave a sandwich to the child wrapped in foil' (sounds like the child was wrapped); better: 'She gave the child a sandwich wrapped in foil.'" },
       { type: "tip", content: "SAT TIP: The word right after the comma (or modifier) should be what the modifier describes. If it's not, the modifier is dangling or misplaced." },
     ],
     question: {
@@ -3263,11 +3263,11 @@ export const LESSONS: Record<string, LessonData> = {
   },
   "69": {
     id: "69",
-    title: "1500+: Evidence Pairs—Expert",
+    title: "1500+: Evidence Pairs, Expert",
     xpReward: 30,
     content: [
       { type: "heading", content: "Best Evidence for the Claim" },
-      { type: "text", content: "The evidence must directly support your answer to the previous question—not just the same topic. Quote that only sets the scene doesn't prove a claim about cause or opinion. The best evidence is a sentence where the author states or clearly implies the answer. If two quotes seem close, choose the one that explicitly states rather than merely suggests." },
+      { type: "text", content: "The evidence must directly support your answer to the previous question, not just the same topic. Quote that only sets the scene doesn't prove a claim about cause or opinion. The best evidence is a sentence where the author states or clearly implies the answer. If two quotes seem close, choose the one that explicitly states rather than merely suggests." },
       { type: "tip", content: "SAT TIP: After picking the main answer, ask: which lines actually say or show that? Eliminate quotes that are too broad or off-point." },
     ],
     question: {
@@ -3333,7 +3333,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 30,
     content: [
       { type: "heading", content: "Whose View Is It?" },
-      { type: "text", content: "Distinguish the author's view from: a cited source, a character, or a counterargument. 'The author would most likely agree that...' means the view consistent with the passage's main argument and tone. 'According to the passage' can be anyone mentioned; 'the author suggests' is the author's own view. Watch for embedded quotes or 'some argue'—that's not necessarily the author." },
+      { type: "text", content: "Distinguish the author's view from: a cited source, a character, or a counterargument. 'The author would most likely agree that...' means the view consistent with the passage's main argument and tone. 'According to the passage' can be anyone mentioned; 'the author suggests' is the author's own view. Watch for embedded quotes or 'some argue'; that's not necessarily the author." },
       { type: "tip", content: "SAT TIP: For 'author would agree,' eliminate answers that are someone else's view or that the author explicitly disagrees with." },
     ],
     question: {
@@ -3355,8 +3355,8 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 30,
     content: [
       { type: "heading", content: "Time Management for 750+ EBRW" },
-      { type: "text", content: "Reading: ~13 min per passage (5 passages) so you have time to read and answer. Read the passage first for main idea and structure; then answer in order. Don't get stuck—mark hard questions and return. Writing: move quickly through convention questions; spend more time on purpose and development. Leave a few minutes to check answers and grid-in." },
-      { type: "tip", content: "SAT TIP: Practice with a timer. If you're behind, speed up on easier questions. Never leave blanks—guess if needed." },
+      { type: "text", content: "Reading: ~13 min per passage (5 passages) so you have time to read and answer. Read the passage first for main idea and structure; then answer in order. Don't get stuck; mark hard questions and return. Writing: move quickly through convention questions; spend more time on purpose and development. Leave a few minutes to check answers and grid-in." },
+      { type: "tip", content: "SAT TIP: Practice with a timer. If you're behind, speed up on easier questions. Never leave blanks; guess if needed." },
     ],
     question: {
       id: "q73",
@@ -3377,7 +3377,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 35,
     content: [
       { type: "heading", content: "Strategy for 1500+" },
-      { type: "text", content: "To maximize your score: (1) Master every lesson in this path—they map to SAT topics. (2) Take full-length practice tests under timed conditions. (3) Review every mistake and understand why the right answer is right. (4) Reading: main idea first, evidence pairs—main answer first. (5) Writing: grammar rules, concision, logical flow. (6) Math: show work, check units, re-read the question. (7) Get enough sleep before test day; manage anxiety. Consistency beats cramming." },
+      { type: "text", content: "To maximize your score: (1) Master every lesson in this path; they map to SAT topics. (2) Take full-length practice tests under timed conditions. (3) Review every mistake and understand why the right answer is right. (4) Reading: main idea first, evidence pairs: main answer first. (5) Writing: grammar rules, concision, logical flow. (6) Math: show work, check units, re-read the question. (7) Get enough sleep before test day; manage anxiety. Consistency beats cramming." },
       { type: "tip", content: "SAT TIP: You've completed the path. Practice with official materials, track weak areas, and refine. You're ready to aim for 1500+." },
     ],
     question: {
@@ -3401,7 +3401,7 @@ export const LESSONS: Record<string, LessonData> = {
       { type: "heading", content: "Multi-Step Algebra & Quadratic Reasoning" },
       { type: "text", content: "The hardest SAT math questions combine several ideas: distributing and collecting terms, working with parameters (letters like k or a), and using the structure of expressions rather than brute-force solving. For quadratics, the discriminant b² − 4ac tells you how many real roots exist; one root means the parabola is tangent to the x-axis (discriminant = 0)." },
       { type: "formula", content: "Discriminant: Δ = b² − 4ac. Δ > 0 → two distinct real roots; Δ = 0 → one repeated root (vertex on x-axis); Δ < 0 → no real roots." },
-      { type: "text", content: "For 'find k so that the equation has exactly one solution,' set b² − 4ac = 0 and solve for k. For 'the graph has no x-intercepts,' you need Δ < 0. For sum or product of roots, use Vieta's formulas: sum = −b/a, product = c/a—no need to find the roots explicitly." },
+      { type: "text", content: "For 'find k so that the equation has exactly one solution,' set b² − 4ac = 0 and solve for k. For 'the graph has no x-intercepts,' you need Δ < 0. For sum or product of roots, use Vieta's formulas: sum = −b/a, product = c/a; no need to find the roots explicitly." },
       { type: "example", content: "x² + kx + 9 = 0 has one real solution when k² − 36 = 0, so k = ±6. The vertex then lies on the x-axis." },
       { type: "text", content: "Algebra traps: (a + b)² = a² + 2ab + b², not a² + b². When you have x² + y² and xy, think (x+y)² = x² + 2xy + y² so x² + y² = (x+y)² − 2xy. Absolute value equations: |A| = B means A = B or A = −B; check that solutions work in the original." },
       { type: "tip", content: "SAT TIP: For parameter problems, write the condition (e.g. discriminant = 0), then solve. Plug answer choices back when stuck. Use Desmos to check: graph and see how many roots." },
@@ -3431,11 +3431,11 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 25,
     content: [
       { type: "heading", content: "Evidence That Supports, Weakens, or Refines" },
-      { type: "text", content: "Hard evidence questions don't just ask 'which quote supports your answer'—they ask which finding would strengthen or weaken a claim, or which quotation would NOT support an answer. To strengthen: choose evidence that directly shows the claim is true (e.g. before/after data, a clear statement by the author). To weaken: choose evidence that undermines the claim (e.g. no difference when a difference was claimed, or an alternative explanation)." },
-      { type: "text", content: "Inference questions ask what must be true or what the author would likely agree with, given the passage. The correct answer is supported by the text but is not a direct quote—it's a logical next step or implication. Wrong answers often go too far (assert something the passage doesn't support) or restate something that doesn't address the question." },
+      { type: "text", content: "Hard evidence questions don't just ask 'which quote supports your answer'; they ask which finding would strengthen or weaken a claim, or which quotation would NOT support an answer. To strengthen: choose evidence that directly shows the claim is true (e.g. before/after data, a clear statement by the author). To weaken: choose evidence that undermines the claim (e.g. no difference when a difference was claimed, or an alternative explanation)." },
+      { type: "text", content: "Inference questions ask what must be true or what the author would likely agree with, given the passage. The correct answer is supported by the text but is not a direct quote; it's a logical next step or implication. Wrong answers often go too far (assert something the passage doesn't support) or restate something that doesn't address the question." },
       { type: "tip", content: "SAT TIP: For 'which would most weaken,' find the choice that contradicts or undermines the claim. For 'the author would most likely agree that,' eliminate answers that contradict the passage or are too extreme." },
       { type: "example", content: "Claim: 'The program increased attendance.' Weakener: 'Attendance was the same in the program and control groups after one year.' Supporter: 'Attendance rose 20% in program schools and 5% in comparison schools.'" },
-      { type: "text", content: "When the question says 'which quotation would NOT support your answer,' three choices will support it and one will not—often the one that is merely related (e.g. gives a date or a detail) but doesn't actually prove the claim. Cross out the ones that do support, then pick the leftover." },
+      { type: "text", content: "When the question says 'which quotation would NOT support your answer,' three choices will support it and one will not, often the one that is merely related (e.g. gives a date or a detail) but doesn't actually prove the claim. Cross out the ones that do support, then pick the leftover." },
       { type: "formula", content: "Support = evidence that directly shows the claim. Weaken = evidence that shows the claim is false or less likely. NOT support = sounds relevant but doesn't prove the claim." },
     ],
     question: {
@@ -3495,7 +3495,7 @@ export const LESSONS: Record<string, LessonData> = {
     xpReward: 25,
     content: [
       { type: "heading", content: "Author's Purpose, Tone, and Function of Text" },
-      { type: "text", content: "Rhetoric questions ask why the author made a choice: to support an argument, to contrast with a previous point, to introduce a counterargument that they will then address, or to create a specific effect (e.g. emphasize, surprise, qualify). The correct answer describes the function—what the choice does in the passage—not just what the sentence says." },
+      { type: "text", content: "Rhetoric questions ask why the author made a choice: to support an argument, to contrast with a previous point, to introduce a counterargument that they will then address, or to create a specific effect (e.g. emphasize, surprise, qualify). The correct answer describes the function: what the choice does in the passage, not just what the sentence says." },
       { type: "text", content: "Tone questions ask how the author feels about a topic: enthusiastic, skeptical, cautious, dismissive, neutral, or qualified (e.g. 'acknowledges merit but criticizes'). Words like 'supposedly,' 'not without merit,' 'well-meaning but ultimately,' and 'suggestive rather than definitive' signal a mixed or critical tone. The answer must match the full context, not one word." },
       { type: "example", content: "'The author describes the proposal as well-meaning but ultimately impractical.' Tone = acknowledging good intentions but concluding it won't work." },
       { type: "tip", content: "SAT TIP: For 'the function of the paragraph is to,' choose the answer that says what the paragraph does for the argument (e.g. present a view the author will then challenge). For tone, look at the whole passage and words that show attitude." },
@@ -3730,7 +3730,7 @@ export const LESSONS: Record<string, LessonData> = {
       { type: "text", content: "Counting: if you have a choices for one item and b for another, and each choice is independent, there are a·b combinations (multiplication rule). For more complex problems (like seating with restrictions), it can be easier to list systematically or use permutations/combinations, but most SAT questions stay within simple multiplication/addition logic." },
       { type: "example", content: "A fair coin is flipped 3 times. P(at least one tails) = 1 − P(all heads) = 1 − (1/2)³ = 7/8." },
       { type: "text", content: "Conditional probability: P(A | B) = P(A and B)/P(B). In a table, restrict to the row or column given by B, then take the fraction that also satisfies A. For example, if 30 of 80 students are left-handed and 12 of those play piano, then P(plays piano | left-handed) = 12/30 = 2/5." },
-      { type: "tip", content: "SAT TIP: Draw a quick table or tree. Use complements for 'at least one.' Always be clear about the total you're dividing by—especially in 'given that' questions." },
+      { type: "tip", content: "SAT TIP: Draw a quick table or tree. Use complements for 'at least one.' Always be clear about the total you're dividing by, especially in 'given that' questions." },
     ],
     question: {
       id: "q81",
@@ -3934,3 +3934,13 @@ export function getNextLessonId(currentId: string): string | null {
   if (i === -1 || i === LESSON_ORDER.length - 1) return null;
   return LESSON_ORDER[i + 1] ?? null;
 }
+
+/**
+ * Which track each lesson belongs to. These lists were duplicated across the
+ * dashboard, the progress API and the skill tree and had drifted: the eight
+ * "Hard:" lessons (75-82) were missing from two of the three copies, so
+ * finishing them awarded XP but never moved the progress bars.
+ */
+export const MATH_LESSON_IDS: string[] = ["1", "2", "3", "R1", "4", "5", "6", "R2", "7", "8", "9", "10", "R3", "19", "20", "21", "R4", "25", "26", "27", "28", "29", "35", "36", "37", "38", "39", "45", "46", "47", "48", "49", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "75", "77", "79", "81"];
+
+export const READING_LESSON_IDS: string[] = ["11", "12", "13", "R5", "14", "15", "16", "R6", "17", "18", "22", "23", "24", "R7", "30", "31", "32", "33", "34", "40", "41", "42", "43", "44", "50", "51", "52", "53", "54", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "76", "78", "80", "82"];

@@ -1,16 +1,27 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
-import { prisma } from "@/lib/prisma";
+import { currentUserId } from "@/lib/api-auth";
 import { getLesson } from "@/lib/lessons";
+import { getDailyGoal, grantXP } from "@/lib/xp-service";
+import { XP, XP_SOURCE, levelFromXP } from "@/lib/xp";
+import { prisma } from "@/lib/prisma";
 
+/**
+ * Finishing a lesson. The first time pays the lesson's own reward; after that it
+ * pays a smaller review award, once per lesson per day.
+ *
+ * The old version returned early on an already-completed lesson, and the streak
+ * update sat below that return. Redoing a lesson therefore did not keep a streak
+ * alive, and once a student had finished all 89 lessons no action in the app
+ * could extend one at all. Going through grantXP means every path here counts
+ * the day, whether or not it happens to pay anything.
+ */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await currentUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { lessonId } = await request.json();
+  const { lessonId } = await request.json().catch(() => ({ lessonId: null }));
   if (!lessonId || typeof lessonId !== "string") {
     return NextResponse.json({ error: "lessonId required" }, { status: 400 });
   }
@@ -20,48 +31,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
   }
 
-  const userId = session.user.id as string;
+  const firstTime =
+    (await prisma.xPRecord.findFirst({
+      where: { userId, source: XP_SOURCE.lesson, reference: lessonId },
+      select: { id: true },
+    })) === null;
 
-  const existing = await prisma.xPRecord.findFirst({
-    where: { userId, source: "lesson", reference: lessonId },
-  });
-  if (existing) {
-    return NextResponse.json({ ok: true, xpEarned: 0, alreadyCompleted: true });
-  }
+  const result = firstTime
+    ? await grantXP(userId, {
+        amount: lesson.xpReward,
+        source: XP_SOURCE.lesson,
+        reference: lessonId,
+        scope: "once",
+      })
+    : await grantXP(userId, {
+        amount: XP.lessonReview,
+        source: XP_SOURCE.lessonReview,
+        reference: lessonId,
+        scope: "daily",
+      });
 
-  await prisma.xPRecord.create({
-    data: {
-      userId,
-      amount: lesson.xpReward,
-      source: "lesson",
-      reference: lessonId,
-    },
-  });
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const existingStreak = await prisma.streak.findUnique({ where: { userId } });
-  const lastActive = existingStreak?.lastActiveAt ? new Date(existingStreak.lastActiveAt) : null;
-  const lastActiveDay = lastActive ? (() => { lastActive.setHours(0, 0, 0, 0); return lastActive.getTime(); })() : 0;
-  const todayMs = today.getTime();
-  const dayDiff = Math.floor((todayMs - lastActiveDay) / (24 * 60 * 60 * 1000));
-
-  let newStreak = existingStreak?.currentStreak ?? 0;
-  if (dayDiff === 0) newStreak = existingStreak?.currentStreak ?? 1;
-  else if (dayDiff === 1) newStreak = (existingStreak?.currentStreak ?? 0) + 1;
-  else newStreak = 1;
-
-  const longestStreak = Math.max(newStreak, existingStreak?.longestStreak ?? 0);
-
-  await prisma.streak.upsert({
-    where: { userId },
-    create: { userId, currentStreak: 1, longestStreak: 1, lastActiveAt: new Date() },
-    update: { currentStreak: newStreak, longestStreak, lastActiveAt: new Date() },
-  });
+  const [total, dailyGoal] = await Promise.all([
+    prisma.xPRecord.aggregate({ where: { userId }, _sum: { amount: true } }),
+    getDailyGoal(userId),
+  ]);
+  const totalXP = total._sum.amount ?? 0;
 
   return NextResponse.json({
     ok: true,
-    xpEarned: lesson.xpReward,
-    alreadyCompleted: false,
+    xpEarned: result.awarded,
+    alreadyCompleted: !firstTime,
+    source: result.source,
+    totalXP,
+    level: levelFromXP(totalXP),
+    streak: result.streak,
+    dailyGoal,
   });
 }

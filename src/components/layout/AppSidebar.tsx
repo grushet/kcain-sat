@@ -10,15 +10,21 @@ import {
   FileQuestion,
   Calendar,
   Target,
+  History,
   LogOut,
   User,
   Menu,
   X,
+  CheckSquare,
+  ExternalLink,
 } from "lucide-react";
 import { KcainLogo } from "./KcainLogo";
 import { useState } from "react";
 import clsx from "clsx";
 import { ThemeToggle } from "./ThemeToggle";
+
+/** The planner, which signs in with this same account. */
+const PLANNER_URL = "https://tasks.cainsat.org";
 
 const mainLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -26,6 +32,7 @@ const mainLinks = [
   { href: "/full-test", label: "Full Test",  icon: FileQuestion },
   { href: "/calendar",  label: "Calendar",   icon: Calendar },
   { href: "/practice",  label: "Practice",   icon: Target },
+  { href: "/history",   label: "Results",    icon: History },
 ];
 
 export function AppSidebar() {
@@ -83,6 +90,25 @@ export function AppSidebar() {
             {label}
           </Link>
         ))}
+
+        {/*
+          The planner is a separate app on its own subdomain, but it shares this
+          account, so it belongs in this list. Nothing linked to it before, which
+          left it unreachable for anyone who did not already know the URL.
+        */}
+        <a
+          href={PLANNER_URL}
+          onClick={() => setMobileOpen(false)}
+          className={clsx(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+            "text-black/62 hover:text-black hover:bg-black/5",
+            "dark:text-sat-mist dark:hover:text-sat-frost dark:hover:bg-white/5"
+          )}
+        >
+          <CheckSquare className="w-4.5 h-4.5 shrink-0 opacity-65" />
+          <span className="flex-1">Tasks</span>
+          <ExternalLink className="w-3 h-3 shrink-0 opacity-40" aria-hidden />
+        </a>
       </nav>
 
       {/* Bottom section */}

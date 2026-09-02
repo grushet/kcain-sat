@@ -1,40 +1,67 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { currentUserId } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { getLesson } from "@/lib/lessons";
+import { getLesson, MATH_LESSON_IDS, READING_LESSON_IDS } from "@/lib/lessons";
+import { getXpSummary } from "@/lib/xp-service";
+import { DAILY_GOAL_XP, levelFromXP, xpLabel } from "@/lib/xp";
 
-const MATH_IDS = ["1", "2", "3", "R1", "4", "5", "6", "R2", "7", "8", "9", "10", "R3", "19", "20", "21", "R4", "25", "26", "27", "28", "29", "35", "36", "37", "38", "39", "45", "46", "47", "48", "49", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64"];
-const READING_IDS = ["11", "12", "13", "R5", "14", "15", "16", "R6", "17", "18", "22", "23", "24", "R7", "30", "31", "32", "33", "34", "40", "41", "42", "43", "44", "50", "51", "52", "53", "54", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74"];
+export const dynamic = "force-dynamic";
+
+const EMPTY = {
+  totalXP: 0,
+  level: levelFromXP(0),
+  streak: { current: 0, longest: 0, extended: false },
+  dailyGoal: { target: DAILY_GOAL_XP, earned: 0, completed: false },
+  streakAtRisk: false,
+  completedLessonIds: [] as string[],
+  mathCompleted: 0,
+  readingCompleted: 0,
+  lastCompleted: [] as { lessonId: string | null; title: string; completedAt: string }[],
+  recentXP: [] as { source: string; label: string; amount: number; at: string }[],
+};
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ totalXP: 0, completedLessonIds: [], streak: 0, mathCompleted: 0, readingCompleted: 0, lastCompleted: [] });
-  }
+  const userId = await currentUserId();
+  if (!userId) return NextResponse.json(EMPTY);
 
-  const userId = session.user.id as string;
-
-  const [xpRecords, streakRow] = await Promise.all([
-    prisma.xPRecord.findMany({ where: { userId, source: "lesson" }, orderBy: { createdAt: "desc" } }),
-    prisma.streak.findUnique({ where: { userId } }),
+  const [summary, lessonRecords, recent] = await Promise.all([
+    getXpSummary(userId),
+    prisma.xPRecord.findMany({
+      where: { userId, source: "lesson" },
+      orderBy: { createdAt: "desc" },
+      select: { reference: true, createdAt: true },
+    }),
+    prisma.xPRecord.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: { source: true, amount: true, createdAt: true },
+    }),
   ]);
 
-  const totalXP = (await prisma.xPRecord.aggregate({ where: { userId }, _sum: { amount: true } }))._sum.amount ?? 0;
-  const completedLessonIds = xpRecords.map((r) => r.reference).filter(Boolean) as string[];
-  const mathCompleted = completedLessonIds.filter((id) => MATH_IDS.includes(id)).length;
-  const readingCompleted = completedLessonIds.filter((id) => READING_IDS.includes(id)).length;
-  const lastCompleted = xpRecords.slice(0, 5).map((r) => {
-    const lesson = getLesson(r.reference ?? "");
-    return { lessonId: r.reference, title: lesson?.title ?? "Lesson", completedAt: r.createdAt };
-  });
+  const completedLessonIds = lessonRecords
+    .map((r) => r.reference)
+    .filter((id): id is string => typeof id === "string");
+  const mathCompleted = completedLessonIds.filter((id) => MATH_LESSON_IDS.includes(id)).length;
+  const readingCompleted = completedLessonIds.filter((id) => READING_LESSON_IDS.includes(id)).length;
+
+  const lastCompleted = lessonRecords.slice(0, 5).map((r) => ({
+    lessonId: r.reference,
+    title: getLesson(r.reference ?? "")?.title ?? "Lesson",
+    completedAt: r.createdAt.toISOString(),
+  }));
 
   return NextResponse.json({
-    totalXP,
+    ...summary,
     completedLessonIds,
-    streak: streakRow?.currentStreak ?? 0,
     mathCompleted,
     readingCompleted,
     lastCompleted,
+    recentXP: recent.map((r) => ({
+      source: r.source,
+      label: xpLabel(r.source),
+      amount: r.amount,
+      at: r.createdAt.toISOString(),
+    })),
   });
 }

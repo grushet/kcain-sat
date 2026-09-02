@@ -1,13 +1,18 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Check, X, Calculator, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, X, Calculator, ExternalLink, History, Zap } from "lucide-react";
 import { getQuestionsByTopic } from "@/lib/questions";
 import type { PracticeBankQuestion } from "@/lib/questions";
 import { mathStr } from "@/components/MathText";
+import {
+  PRACTICE_TOPIC_LABELS as TOPIC_LABELS,
+  PRACTICE_TOPIC_MAP as TOPIC_MAP,
+  MATH_TOPIC_SLUGS,
+} from "@/lib/practice-topics";
 
 const QUESTIONS_PER_SESSION = 25;
 
@@ -31,53 +36,54 @@ function getSessionQuestions(topic: string, difficulty: "easy" | "medium" | "har
   return chosen.sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
 }
 
-const TOPIC_LABELS: Record<string, string> = {
-  "math-algebra": "Math – Algebra",
-  "math-problem-solving": "Math – Problem Solving",
-  "math-quadratics": "Math – Quadratics",
-  "math-functions": "Math – Functions",
-  "math-data": "Math – Data & Statistics",
-  "math-geometry": "Math – Geometry",
-  "math-inequalities": "Math – Inequalities",
-  "math-exponentials": "Math – Exponentials",
-  "math-trigonometry": "Math – Trigonometry",
-  "math-word-problems": "Math – Word Problems",
-  "math-advanced": "Math – Advanced",
-  "reading-evidence": "Reading – Evidence",
-  "reading-words": "Reading – Words in Context",
-  "reading-main-idea": "Reading – Main Idea",
-  "reading-tone": "Reading – Tone",
-  "reading-rhetoric": "Reading – Rhetoric",
-  "reading-comprehension": "Reading – Comprehension",
-  "writing-conventions": "Writing – Conventions",
-  "writing-conventions-advanced": "Writing – Conventions Advanced",
-  "writing-transitions": "Writing – Transitions",
-};
+/**
+ * Opens a run server-side. A failure here only means this run goes unrecorded;
+ * practising must not depend on the database being reachable.
+ */
+async function startPracticeSession(
+  topicSlug: string,
+  difficulty: string,
+  totalQuestions: number
+): Promise<string | null> {
+  try {
+    const r = await fetch("/api/practice/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topicSlug, difficulty, totalQuestions }),
+    });
+    const d = await r.json().catch(() => null);
+    return typeof d?.sessionId === "string" ? d.sessionId : null;
+  } catch {
+    return null;
+  }
+}
 
-const TOPIC_MAP: Record<string, string> = {
-  "math-algebra": "algebra",
-  "math-problem-solving": "math",
-  "math-quadratics": "quadratics",
-  "math-functions": "functions",
-  "math-data": "data",
-  "math-geometry": "geometry",
-  "math-inequalities": "inequalities",
-  "math-exponentials": "exponentials",
-  "math-trigonometry": "trigonometry",
-  "math-word-problems": "word-problems",
-  "math-advanced": "advanced-math",
-  "reading-evidence": "evidence",
-  "reading-words": "words",
-  "reading-main-idea": "main-idea",
-  "reading-tone": "tone",
-  "reading-rhetoric": "rhetoric",
-  "reading-comprehension": "reading",
-  "writing-conventions": "grammar",
-  "writing-conventions-advanced": "conventions-advanced",
-  "writing-transitions": "transitions",
-};
+async function recordPracticeAnswer(
+  sessionId: string,
+  body: { questionId: string; selectedAnswer: string; orderIndex: number; timeSpent: number }
+): Promise<number> {
+  try {
+    const r = await fetch(`/api/practice/session/${sessionId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json().catch(() => null);
+    return typeof d?.xpEarned === "number" ? d.xpEarned : 0;
+  } catch {
+    // The answer is lost from the log, not from the screen the student is on.
+    return 0;
+  }
+}
 
-const MATH_TOPIC_SLUGS = new Set(Object.keys(TOPIC_MAP).filter((k) => k.startsWith("math-")));
+async function closePracticeSession(sessionId: string): Promise<void> {
+  try {
+    await fetch(`/api/practice/session/${sessionId}`, { method: "PATCH", keepalive: true });
+  } catch {
+    // An unclosed run still keeps every answer; only its end time is missing.
+  }
+}
+
 const DESMOS_CALCULATOR_URL = "https://www.desmos.com/calculator";
 const DESMOS_SCIENTIFIC_URL = "https://www.desmos.com/scientific";
 
@@ -97,6 +103,16 @@ export default function PracticeTopicPage() {
   const [showResult, setShowResult] = useState(false);
   const [desmosOpen, setDesmosOpen] = useState(true);
 
+  // The run being recorded. Held in a ref as well because answers are posted
+  // from handlers that would otherwise capture a stale id.
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionXp, setSessionXp] = useState(0);
+  const sessionIdRef = useRef<string | null>(null);
+  const sessionCount = useRef(0);
+  const questionShownAt = useRef<number>(Date.now());
+  /** Guards against two rapid answers each opening their own run. */
+  const sessionPending = useRef<Promise<string | null> | null>(null);
+
   const isMathTopic = topicSlug && MATH_TOPIC_SLUGS.has(topicSlug);
 
   useEffect(() => {
@@ -105,18 +121,81 @@ export default function PracticeTopicPage() {
     setSelected(null);
     setShowResult(false);
     setScore(0);
+    setSessionXp(0);
     setQuestionsLoading(true);
-    setQuestions(getSessionQuestions(topic, diff));
+    const next = getSessionQuestions(topic, diff);
+    setQuestions(next);
     setQuestionsLoading(false);
-  }, [topic, difficulty]);
+    questionShownAt.current = Date.now();
+    sessionCount.current = next.length;
+
+    // Changing the difficulty filter starts a genuinely different run, so the
+    // old one is closed out rather than having the new answers appended to it.
+    const previous = sessionIdRef.current;
+    sessionIdRef.current = null;
+    setSessionId(null);
+    if (previous) void closePracticeSession(previous);
+  }, [topic, topicSlug, difficulty]);
+
+  // Leaving the page ends the run. Practice has no finish button on most exits,
+  // so without this every run would look permanently open.
+  useEffect(() => {
+    return () => {
+      const id = sessionIdRef.current;
+      if (id) void closePracticeSession(id);
+    };
+  }, []);
+
+  useEffect(() => {
+    questionShownAt.current = Date.now();
+  }, [current]);
 
   const q = questions[current];
   const isCorrect = selected === q?.correctKey;
 
+  /**
+   * The run is opened by the first answer, not by opening the page. Creating it
+   * on load would leave a row behind every time somebody merely glanced at a
+   * topic and moved on.
+   */
+  async function ensureSession(): Promise<string | null> {
+    if (sessionIdRef.current) return sessionIdRef.current;
+    if (!sessionPending.current) {
+      sessionPending.current = startPracticeSession(
+        topicSlug,
+        difficulty,
+        sessionCount.current
+      ).then((id) => {
+        if (id) {
+          sessionIdRef.current = id;
+          setSessionId(id);
+        }
+        sessionPending.current = null;
+        return id;
+      });
+    }
+    return sessionPending.current;
+  }
+
   const handleCheck = () => {
-    if (!selected) return;
+    if (!selected || !q) return;
     setShowResult(true);
     if (selected === q.correctKey) setScore((s) => s + 1);
+
+    const answer = {
+      questionId: q.id,
+      selectedAnswer: selected,
+      orderIndex: current,
+      timeSpent: Math.max(0, Math.round((Date.now() - questionShownAt.current) / 1000)),
+    };
+    // Recorded per answer rather than at the end, because a student who closes
+    // the tab half way through still did the work.
+    void ensureSession().then((id) => {
+      if (!id) return;
+      void recordPracticeAnswer(id, answer).then((earned) => {
+        if (earned > 0) setSessionXp((x) => x + earned);
+      });
+    });
   };
 
   const handleNext = () => {
@@ -125,7 +204,27 @@ export default function PracticeTopicPage() {
     if (current < questions.length - 1) setCurrent((c) => c + 1);
   };
 
-  const handleFinish = () => router.push("/practice");
+  const handleFinish = () => {
+    const id = sessionIdRef.current;
+    sessionIdRef.current = null;
+    if (id) void closePracticeSession(id);
+    router.push("/practice");
+  };
+
+  // An unrecognised slug used to silently fall back to algebra questions under
+  // the raw slug as a heading, which looked like a real but mislabelled topic.
+  if (!Object.prototype.hasOwnProperty.call(TOPIC_MAP, topicSlug)) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <Link href="/practice" className="inline-flex items-center gap-2 text-sat-primary hover:underline mb-6">
+          <ArrowLeft className="w-4 h-4" /> Back to Practice
+        </Link>
+        <div className="card p-8 text-center text-sat-gray-600 dark:text-sat-gray-400">
+          That practice topic does not exist. Pick one from the practice page.
+        </div>
+      </div>
+    );
+  }
 
   if (questionsLoading || questions.length === 0) {
     return (
@@ -146,9 +245,18 @@ export default function PracticeTopicPage() {
         <ArrowLeft className="w-4 h-4" /> Back to Practice
       </Link>
 
-      <p className="text-sm text-sat-gray-500 dark:text-sat-gray-400 mb-4">
-        This session: {questions.length} random questions — different every time you open this category.
-      </p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-4">
+        <p className="text-sm text-sat-gray-500 dark:text-sat-gray-400">
+          This session: {questions.length} random questions, different every time you open this category.
+        </p>
+        <Link
+          href="/history"
+          className="inline-flex items-center gap-1.5 text-sm text-sky-600 dark:text-sky-400 hover:underline"
+        >
+          <History className="w-3.5 h-3.5" />
+          {sessionId ? "Saving to your results" : "Saved to your results"}
+        </Link>
+      </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
         {(["all", "easy", "medium", "hard", "very_hard"] as const).map((d) => (
@@ -170,7 +278,14 @@ export default function PracticeTopicPage() {
       <div className="mb-4">
         <div className="flex justify-between text-sm text-sat-gray-600 dark:text-sat-gray-400 mb-1">
           <span>Question {current + 1} of {questions.length}</span>
-          <span>Score: {score}</span>
+          <span className="flex items-center gap-3">
+            <span>Score: {score}</span>
+            {sessionXp > 0 && (
+              <span className="inline-flex items-center gap-1 font-semibold text-sat-primary">
+                <Zap className="w-3.5 h-3.5" />+{sessionXp} XP
+              </span>
+            )}
+          </span>
         </div>
         <div className="h-2 rounded-full bg-sat-gray-200 dark:bg-sat-gray-700 overflow-hidden">
           <motion.div

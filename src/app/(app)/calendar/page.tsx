@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Calendar as CalendarIcon } from "lucide-react";
 
@@ -9,6 +10,8 @@ type LastFullTest = {
   mathScaled: number;
   totalScaled: number;
   computedAt: string;
+  /** Set when the score came from the database, so it can be linked to. */
+  attemptId?: string;
 };
 
 function formatDate(dateString: string) {
@@ -27,19 +30,46 @@ export default function CalendarPage() {
   const [lastTest, setLastTest] = useState<LastFullTest | null>(null);
   const [nextTestDate, setNextTestDate] = useState<string>("");
 
+  // The stored score is the source of truth. localStorage is read first only so
+  // something appears immediately, and so a student who tested before results
+  // were saved anywhere still sees their last score.
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const stored = window.localStorage.getItem("cain:lastFullTest");
-      if (stored) {
-        const parsed = JSON.parse(stored) as LastFullTest;
-        setLastTest(parsed);
-      }
+      if (stored) setLastTest(JSON.parse(stored) as LastFullTest);
       const nextDate = window.localStorage.getItem("cain:nextTestDate");
       if (nextDate) setNextTestDate(nextDate);
     } catch {
-      // ignore
+      // Private browsing and malformed values both land here.
     }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/history")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return;
+        const latest = (d.attempts ?? []).find(
+          (a: { status: string; totalScaled: number | null }) =>
+            a.status === "completed" && a.totalScaled !== null
+        );
+        if (!latest) return;
+        setLastTest({
+          readingScaled: latest.rwScaled ?? 0,
+          mathScaled: latest.mathScaled ?? 0,
+          totalScaled: latest.totalScaled,
+          computedAt: latest.completedAt ?? latest.startedAt,
+          attemptId: latest.id,
+        });
+      })
+      .catch(() => {
+        // Keep whatever localStorage gave us.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function handleNextTestChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -133,14 +163,35 @@ export default function CalendarPage() {
                     </span>
                   )}
                 </p>
-                <p className="text-sat-gray-600 dark:text-sky-300 text-xs">
-                  Update this by entering new raw scores on the Full Test page.
-                </p>
+                {lastTest.attemptId ? (
+                  <p className="text-xs">
+                    <Link
+                      href={`/history/${lastTest.attemptId}`}
+                      className="text-sky-600 dark:text-sky-400 hover:underline"
+                    >
+                      See every question from this test
+                    </Link>
+                    <span className="text-sat-gray-500 dark:text-sky-300"> · </span>
+                    <Link
+                      href="/history"
+                      className="text-sky-600 dark:text-sky-400 hover:underline"
+                    >
+                      All results
+                    </Link>
+                  </p>
+                ) : (
+                  <p className="text-sat-gray-600 dark:text-sky-300 text-xs">
+                    Take a new test on the Full Test page to update this.
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-sm text-sat-gray-600 dark:text-sky-200">
-                No full-test score yet. Take a practice test and use the score calculator on the Full Test page to see
-                your score here.
+                No full-test score yet.{" "}
+                <Link href="/full-test" className="text-sky-600 dark:text-sky-400 hover:underline">
+                  Take a full practice test
+                </Link>{" "}
+                and your score will appear here.
               </p>
             )}
           </div>

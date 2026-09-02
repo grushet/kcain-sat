@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+import { isEmailAuthEnabled } from "@/lib/email-auth";
 import { prisma } from "@/lib/prisma";
 import { createPasswordResetToken, sendPasswordResetEmail } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  if (!isEmailAuthEnabled()) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   try {
     const { email } = await request.json();
     if (!email || typeof email !== "string") {
@@ -28,7 +33,7 @@ export async function POST(request: Request) {
       success: true,
       message: sent
         ? "If an account exists with that email, we sent a reset link."
-        : "If an account exists with that email, we sent a reset link. (Email delivery may be delayed—check spam.)",
+        : "If an account exists with that email, we sent a reset link. (Email delivery may be delayed, so check spam.)",
       ...(process.env.NODE_ENV === "development" && !sent && { resetUrl: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/reset-password?token=${token}&email=${encodeURIComponent(normalized)}` }),
     });
   } catch (e) {

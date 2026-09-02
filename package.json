@@ -11,7 +11,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "export-questions": "tsx scripts/export-questions.ts"
+    "export-questions": "tsx scripts/export-questions.ts",
+    "check": "tsx scripts/check-logic.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
