@@ -1009,3 +1009,14 @@ export function getRandomQuestions(count: number, topic?: string): PracticeBankQ
   const shuffled = pool.sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }
+
+const BY_ID = new Map<string, PracticeBankQuestion>(PRACTICE_QUESTIONS.map((q) => [q.id, q]));
+
+/**
+ * Looks a bank question up by id. The API uses this to bank the question and
+ * grade the answer server-side, so the page never has to send question content
+ * or claim its own answer was right.
+ */
+export function getPracticeQuestionById(id: string): PracticeBankQuestion | undefined {
+  return BY_ID.get(id);
+}

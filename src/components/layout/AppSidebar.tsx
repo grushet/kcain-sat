@@ -10,6 +10,7 @@ import {
   FileQuestion,
   Calendar,
   Target,
+  History,
   LogOut,
   User,
   Menu,
@@ -26,6 +27,7 @@ const mainLinks = [
   { href: "/full-test", label: "Full Test",  icon: FileQuestion },
   { href: "/calendar",  label: "Calendar",   icon: Calendar },
   { href: "/practice",  label: "Practice",   icon: Target },
+  { href: "/history",   label: "Results",    icon: History },
 ];
 
 export function AppSidebar() {

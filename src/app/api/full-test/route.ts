@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { upsertQuestions, type BankQuestionInput } from "@/lib/question-store";
+import { currentUserId } from "@/lib/api-auth";
 
 const CB_LIST =
   "https://qbank-api.collegeboard.org/msreportingquestionbank-prod/questionbank/digital/get-questions";
@@ -339,6 +341,67 @@ function normaliseQuestion(meta: Meta, content: Meta, section: string): Normalis
   };
 }
 
+// ── Question bank ─────────────────────────────────────────────────────────
+
+/**
+ * Collegeboard items are immutable, so a row already written never needs to be
+ * written again. This map keeps the ids of items banked since the server started
+ * so a warm module start costs no database round trip at all.
+ */
+const BANKED_MAX = 5000;
+const bankedIds = new Map<string, string>();
+
+function rememberBanked(externalId: string, rowId: string): void {
+  if (bankedIds.size >= BANKED_MAX) {
+    const oldest = bankedIds.keys().next().value;
+    if (oldest !== undefined) bankedIds.delete(oldest);
+  }
+  bankedIds.set(externalId, rowId);
+}
+
+function toBankInput(q: NormalisedQuestion): BankQuestionInput {
+  return {
+    externalId: q.externalId,
+    source: "collegeboard",
+    section: q.domain,
+    topic: q.skill_desc || (q.domain === "math" ? "Math" : "Reading & Writing"),
+    difficulty: q.difficulty,
+    skillDesc: q.skill_desc || null,
+    stimulus: q.stimulus ?? null,
+    questionText: q.stem,
+    questionType: q.type === "spr" ? "grid_in" : "multiple_choice",
+    correctAnswers: q.correctAnswer,
+    explanation: q.rationale ?? null,
+    options: q.answerOptions ?? [],
+  };
+}
+
+/**
+ * Rewrites each question's `id` to its row in the shared bank and reports
+ * whether every one made it. A database that is down must not take the test
+ * down with it, so a failure here only means this attempt cannot be saved.
+ */
+async function bankQuestions(questions: NormalisedQuestion[]): Promise<boolean> {
+  if (questions.length === 0) return true;
+  try {
+    const cold = questions.filter((q) => !bankedIds.has(q.externalId));
+    if (cold.length > 0) {
+      const written = await upsertQuestions(cold.map(toBankInput));
+      written.forEach((rowId, externalId) => rememberBanked(externalId, rowId));
+    }
+    let complete = true;
+    for (const q of questions) {
+      const rowId = bankedIds.get(q.externalId);
+      if (rowId) q.id = rowId;
+      else complete = false;
+    }
+    return complete;
+  } catch (err) {
+    console.error("Could not bank full-test questions:", err);
+    return false;
+  }
+}
+
 // ── Route ─────────────────────────────────────────────────────────────────
 
 /** Reads `excludeIds` without letting a malformed query string 500 the route. */
@@ -354,6 +417,16 @@ function parseExcludeIds(raw: string | null): Set<string> {
 }
 
 export async function GET(req: NextRequest) {
+  // This route writes fetched items into the shared question bank, so it is not
+  // an anonymous endpoint. Only a signed-in student can take a test anyway.
+  const userId = await currentUserId();
+  if (!userId) {
+    return NextResponse.json(
+      { success: false, error: "Please sign in to take a test.", questions: [], count: 0 },
+      { status: 401 }
+    );
+  }
+
   const sp = new URL(req.url).searchParams;
   const section = sp.get("section") === "math" ? "math" : "rw";
   const isM2 = sp.get("module") === "2";
@@ -444,6 +517,10 @@ export async function GET(req: NextRequest) {
 
   const questions = shuffle(picked).slice(0, target);
 
+  // Put the items in the shared bank and hand back their row ids, so the page
+  // can save an attempt by id instead of shipping ~500KB of HTML back up.
+  const banked = await bankQuestions(questions);
+
   if (questions.length === 0) {
     return NextResponse.json(
       {
@@ -462,5 +539,6 @@ export async function GET(req: NextRequest) {
     count: questions.length,
     requested: target,
     partial: questions.length < target,
+    banked,
   });
 }

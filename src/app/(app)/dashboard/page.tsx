@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ProgressTracker } from "@/components/dashboard/ProgressTracker";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { BookOpen, Target, ArrowRight, Trophy, Zap, Lightbulb, Clock, ChevronRight, Star } from "lucide-react";
+import { BookOpen, Target, ArrowRight, Trophy, Zap, Lightbulb, Clock, ChevronRight, Star, FileQuestion, History } from "lucide-react";
 import { LESSONS } from "@/lib/lessons";
 import { MATH_LESSON_IDS, READING_LESSON_IDS } from "@/lib/lessons";
 
@@ -31,10 +31,35 @@ export default function DashboardPage() {
     lastCompleted: [] as { lessonId: string | null; title: string; completedAt: string }[],
   });
 
+  const [lastTest, setLastTest] = useState<{
+    id: string;
+    totalScaled: number;
+    rwScaled: number | null;
+    mathScaled: number | null;
+    completedAt: string | null;
+    startedAt: string;
+  } | null>(null);
+  const [testCount, setTestCount] = useState(0);
+
   useEffect(() => {
     fetch("/api/progress")
       .then((r) => r.json())
       .then(setProgress)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/history")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        const done = (d.attempts ?? []).filter(
+          (a: { status: string; totalScaled: number | null }) =>
+            a.status === "completed" && a.totalScaled !== null
+        );
+        setTestCount(done.length);
+        setLastTest(done[0] ?? null);
+      })
       .catch(() => {});
   }, []);
 
@@ -128,6 +153,54 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
+      {/* Latest full-test score */}
+      <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+        {lastTest ? (
+          <Link href={`/history/${lastTest.id}`} className="block">
+            <div className="card p-5 hover:bg-sat-gray-50 dark:hover:bg-sat-gray-700/40 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-sat-primary/10 flex items-center justify-center shrink-0">
+                  <Trophy className="w-5 h-5 text-sat-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-sat-gray-500 dark:text-sat-gray-400">
+                    Latest practice test
+                  </p>
+                  <p className="font-display font-bold text-2xl text-sat-gray-900 dark:text-white leading-tight">
+                    {lastTest.totalScaled}
+                    <span className="text-base font-normal text-sat-gray-400"> / 1600</span>
+                  </p>
+                  <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400">
+                    R&amp;W {lastTest.rwScaled} · Math {lastTest.mathScaled}
+                    {testCount > 1 && ` · ${testCount} tests taken`}
+                  </p>
+                </div>
+                <span className="ml-auto text-sm text-sky-600 dark:text-sky-400 hidden sm:flex items-center gap-1">
+                  Review answers <ChevronRight className="w-4 h-4" />
+                </span>
+              </div>
+            </div>
+          </Link>
+        ) : (
+          <div className="card p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-sat-gray-100 dark:bg-sat-gray-700 flex items-center justify-center shrink-0">
+              <FileQuestion className="w-5 h-5 text-sat-gray-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-display font-semibold text-sat-gray-900 dark:text-white">
+                No practice test yet
+              </p>
+              <p className="text-sm text-sat-gray-600 dark:text-sat-gray-400">
+                Sit a full-length test to get a score estimate and a breakdown of every question.
+              </p>
+            </div>
+            <Link href="/full-test" className="btn-primary text-sm py-2 px-4 ml-auto whitespace-nowrap">
+              Start
+            </Link>
+          </div>
+        )}
+      </motion.div>
+
       {/* ── Activity + Tip ── */}
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         <motion.div className="lg:col-span-2 card p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.33 }}>
@@ -195,6 +268,12 @@ export default function DashboardPage() {
           <motion.span className="btn-secondary inline-flex items-center gap-2 justify-center" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
             <Target className="w-5 h-5" />
             Practice Questions
+          </motion.span>
+        </Link>
+        <Link href="/history">
+          <motion.span className="btn-secondary inline-flex items-center gap-2 justify-center" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+            <History className="w-5 h-5" />
+            Your Results
           </motion.span>
         </Link>
       </motion.div>

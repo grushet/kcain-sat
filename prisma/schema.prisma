@@ -19,17 +19,20 @@ model User {
   emailVerified DateTime?
   name          String?
   image         String?
-  password      String?   // For credentials provider
+  password      String? // For credentials provider
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  progress      UserProgress[]
-  xpRecords     XPRecord[]
-  streaks       Streak[]
-  dailyGoals    DailyGoal[]
-  subscription  Subscription?
+  accounts         Account[]
+  sessions         Session[]
+  progress         UserProgress[]
+  xpRecords        XPRecord[]
+  streaks          Streak[]
+  dailyGoals       DailyGoal[]
+  subscription     Subscription?
+  questionAnswers  UserQuestionAnswer[]
+  testAttempts     TestAttempt[]
+  practiceSessions PracticeSession[]
 }
 
 model Account {
@@ -73,7 +76,7 @@ model VerificationToken {
 
 model Section {
   id          String   @id @default(cuid())
-  name        String   // "Math" | "Reading & Writing"
+  name        String // "Math" | "Reading & Writing"
   description String?  @db.Text
   icon        String?
   order       Int      @default(0)
@@ -99,53 +102,78 @@ model Lesson {
   unitId      String
   title       String
   description String?  @db.Text
-  topic       String   // e.g., "Linear Equations", "Evidence-Based Reading"
-  difficulty  String   // "beginner" | "intermediate" | "advanced"
+  topic       String // e.g., "Linear Equations", "Evidence-Based Reading"
+  difficulty  String // "beginner" | "intermediate" | "advanced"
   durationMin Int      @default(5) // Estimated minutes
   order       Int      @default(0)
   xpReward    Int      @default(10)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  unit           Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  contentBlocks  LessonContent[]
-  questions      Question[]
-  userProgress   UserProgress[]
+  unit          Unit            @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  contentBlocks LessonContent[]
+  questions     Question[]
+  userProgress  UserProgress[]
 }
 
 model LessonContent {
-  id        String   @id @default(cuid())
-  lessonId  String
-  type      String   // "text" | "heading" | "example" | "formula"
-  content   String   @db.Text
-  order     Int      @default(0)
+  id       String @id @default(cuid())
+  lessonId String
+  type     String // "text" | "heading" | "example" | "formula"
+  content  String @db.Text
+  order    Int    @default(0)
 
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 }
 
+/// One row per distinct question, shared by every student who ever sees it.
+/// Collegeboard items are immutable and the local bank is static, so content is
+/// stored once here and an attempt only stores the letters a student picked.
+/// Snapshotting the HTML per attempt instead would cost 1-3 MB per full test.
 model Question {
   id            String   @id @default(cuid())
+  /// Stable identity in the question's own source, so the same item is never
+  /// stored twice: Collegeboard's `external_id`, or "bank:<id>" for the local
+  /// practice bank. Null only for rows created before this column existed.
+  externalId    String?  @unique
+  /// "collegeboard" | "practice_bank" | "lesson"
+  source        String   @default("lesson")
+  /// "math" | "rw", where the source says. Null for content that predates it.
+  section       String?
   lessonId      String?
   topic         String
   difficulty    String
+  /// Collegeboard's skill label, e.g. "Linear equations in one variable".
+  skillDesc     String?
+  /// The passage or figure a question refers to, kept separate from the stem
+  /// because the review UI scrolls it in its own box.
+  stimulus      String?  @db.Text
   questionText  String   @db.Text
   questionType  String   @default("multiple_choice") // "multiple_choice" | "grid_in"
+  /// JSON array of every accepted answer. Grid-ins legitimately have several
+  /// ("2/7" and ".2857" are the same answer), so a single string cannot hold
+  /// the key. Read it through parseCorrectAnswers(), which also accepts the
+  /// bare string that lesson-era rows would have stored.
   correctAnswer String   @db.Text
   explanation   String?  @db.Text
   order         Int      @default(0)
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
-  lesson     Lesson?        @relation(fields: [lessonId], references: [id], onDelete: SetNull)
-  answers    QuestionAnswer[]
+  lesson      Lesson?              @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  answers     QuestionAnswer[]
   userAnswers UserQuestionAnswer[]
+
+  @@index([source, section])
+  @@index([topic])
 }
 
 model QuestionAnswer {
-  id         String  @id @default(cuid())
+  id         String @id @default(cuid())
   questionId String
-  text       String  @db.Text
-  optionKey  String  // "A" | "B" | "C" | "D"
-  order      Int     @default(0)
+  text       String @db.Text
+  optionKey  String // "A" | "B" | "C" | "D"
+  order      Int    @default(0)
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
@@ -153,12 +181,12 @@ model QuestionAnswer {
 // ============ USER PROGRESS ============
 
 model UserProgress {
-  id         String   @id @default(cuid())
-  userId     String
-  lessonId   String
-  completed  Boolean  @default(false)
-  score      Int?     // Percentage
-  xpEarned   Int      @default(0)
+  id          String    @id @default(cuid())
+  userId      String
+  lessonId    String
+  completed   Boolean   @default(false)
+  score       Int? // Percentage
+  xpEarned    Int       @default(0)
   completedAt DateTime?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -167,36 +195,57 @@ model UserProgress {
   @@unique([userId, lessonId])
 }
 
+/// One row per answer a student gave, on any surface. This is the flat log that
+/// "which skills am I weakest at" reads; the ordered per-module view that the
+/// review screen renders lives on TestModule.
 model UserQuestionAnswer {
-  id         String   @id @default(cuid())
-  userId     String
-  questionId String
-  selectedAnswer String @db.Text
-  isCorrect  Boolean
-  timeSpent  Int?     // seconds
-  answeredAt DateTime @default(now())
+  id                String   @id @default(cuid())
+  userId            String
+  questionId        String
+  /// "full_test" | "practice" | "lesson"
+  source            String   @default("practice")
+  /// Set for full-test answers. moduleKey is "rw1" | "rw2" | "math1" | "math2".
+  attemptId         String?
+  moduleKey         String?
+  /// Set for practice answers.
+  practiceSessionId String?
+  /// Position within its module or practice session, for stable ordering.
+  orderIndex        Int?
+  /// Null when the student ran out of time or skipped the question.
+  selectedAnswer    String?  @db.Text
+  isCorrect         Boolean
+  timeSpent         Int? // seconds
+  answeredAt        DateTime @default(now())
 
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question        Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  attempt         TestAttempt?     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  practiceSession PracticeSession? @relation(fields: [practiceSessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, answeredAt])
+  @@index([attemptId])
+  @@index([practiceSessionId])
+  @@index([questionId])
 }
 
 model XPRecord {
   id        String   @id @default(cuid())
   userId    String
   amount    Int
-  source    String   // "lesson" | "streak" | "bonus" | "practice"
-  reference String?  // lessonId or other reference
+  source    String // "lesson" | "streak" | "bonus" | "practice"
+  reference String? // lessonId or other reference
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Streak {
-  id           String   @id @default(cuid())
-  userId       String
-  currentStreak Int     @default(0)
-  longestStreak Int     @default(0)
-  lastActiveAt DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastActiveAt  DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -207,8 +256,8 @@ model DailyGoal {
   id        String   @id @default(cuid())
   userId    String
   date      DateTime
-  targetXP Int       @default(20)
-  earnedXP Int       @default(0)
+  targetXP  Int      @default(20)
+  earnedXP  Int      @default(0)
   completed Boolean  @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -216,18 +265,122 @@ model DailyGoal {
   @@unique([userId, date])
 }
 
+// ============ TEST & PRACTICE ATTEMPTS ============
+
+/// One sitting of the full practice test. Created the moment the student starts
+/// rather than when they finish, so a browser crash two hours in is recoverable
+/// instead of total. `status` is what separates a test still being taken from a
+/// finished one; only a completed attempt carries scores.
+model TestAttempt {
+  id     String @id @default(cuid())
+  userId String
+  /// "in_progress" | "completed" | "abandoned"
+  status String @default("in_progress")
+  /// The client's phase machine value, so a resumed test lands on the same
+  /// screen the student left (mid-module, module break, math intro, results).
+  phase  String @default("intro")
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  /// Scores, written once at completion. Raw counts are kept alongside the
+  /// scaled ones so the estimate can be recomputed if the curve ever changes.
+  rwRaw       Int?
+  rwMax       Int?
+  mathRaw     Int?
+  mathMax     Int?
+  rwScaled    Int?
+  mathScaled  Int?
+  totalScaled Int?
+
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  modules TestModule[]
+  answers UserQuestionAnswer[]
+
+  @@index([userId, startedAt])
+  @@index([userId, status])
+}
+
+/// One of the four modules of an attempt. Holds the ordered question list and
+/// the live answer array, which together are what both the resume path and the
+/// review screen read. The flat per-answer rows in UserQuestionAnswer are
+/// written from here when the module ends; they exist for querying, not for
+/// rendering the module back in order.
+model TestModule {
+  id        String  @id @default(cuid())
+  attemptId String
+  /// "rw1" | "rw2" | "math1" | "math2"
+  key       String
+  order     Int     @default(0)
+  /// Whether module 2 was routed to the harder form, which the adaptive test
+  /// decides from the module 1 score.
+  harder    Boolean @default(false)
+
+  /// Ordered Question.id values, and the answer given at each position.
+  /// A null entry is an unanswered question, which is distinct from a wrong one.
+  questionIds Json
+  answers     Json
+  /// Seconds spent on each position, same ordering. Null where untracked.
+  times       Json?
+
+  /// Where the student was when the module was last saved, so a resume puts
+  /// them back on the right question with the right time remaining.
+  currentIndex    Int  @default(0)
+  secondsLeft     Int?
+  durationSeconds Int  @default(0)
+
+  /// "in_progress" | "completed"
+  status   String @default("in_progress")
+  rawScore Int?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  attempt TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, key])
+  @@index([attemptId])
+}
+
+/// A run through one practice topic. Practice has no finish button and a student
+/// can navigate away at any point, so counters are updated per answer rather
+/// than written once at the end.
+model PracticeSession {
+  id         String @id @default(cuid())
+  userId     String
+  topicSlug  String
+  topicLabel String
+  /// "all" | "easy" | "medium" | "hard" | "very_hard"
+  difficulty String @default("all")
+
+  totalQuestions Int @default(0)
+  answered       Int @default(0)
+  correct        Int @default(0)
+
+  startedAt    DateTime  @default(now())
+  lastActiveAt DateTime  @updatedAt
+  completedAt  DateTime?
+
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers UserQuestionAnswer[]
+
+  @@index([userId, startedAt])
+}
+
 // ============ MONETIZATION ============
 
 model Subscription {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  plan           String   // "free" | "premium" | "premium_annual"
-  status         String   // "active" | "cancelled" | "expired"
-  stripeCustomerId String?
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  plan                 String // "free" | "premium" | "premium_annual"
+  status               String // "active" | "cancelled" | "expired"
+  stripeCustomerId     String?
   stripeSubscriptionId String?
-  currentPeriodEnd DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
