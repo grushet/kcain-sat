@@ -4,6 +4,8 @@ import { currentUserId } from "@/lib/api-auth";
 import { QUESTION_SELECT, rowToClientQuestion, type ClientQuestion } from "@/lib/question-store";
 import { writeModuleAnswerLog } from "@/lib/attempt-service";
 import { MODULE_META, countCorrect, isModuleKey } from "@/lib/test-attempt";
+import { grantXP } from "@/lib/xp-service";
+import { XP, XP_SOURCE } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
@@ -172,9 +174,21 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     select: { id: true, rawScore: true },
   });
 
+  let xpEarned = 0;
   if (completed) {
     await writeModuleAnswerLog(userId, attempt.id, key, ordered, orderedAnswers, orderedTimes);
+
+    // Paying per module means an abandoned test still pays for the modules that
+    // were actually sat, and it counts the day for the streak even if the
+    // student never reaches the end.
+    const xp = await grantXP(userId, {
+      amount: XP.testModule,
+      source: XP_SOURCE.testModule,
+      reference: `${attempt.id}:${key}`,
+      scope: "once",
+    });
+    xpEarned = xp.awarded;
   }
 
-  return NextResponse.json({ ok: true, rawScore: saved.rawScore });
+  return NextResponse.json({ ok: true, rawScore: saved.rawScore, xpEarned });
 }

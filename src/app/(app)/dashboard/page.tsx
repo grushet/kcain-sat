@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { BookOpen, Target, ArrowRight, Trophy, Zap, Lightbulb, Clock, ChevronRight, Star, FileQuestion, History } from "lucide-react";
 import { LESSONS } from "@/lib/lessons";
 import { MATH_LESSON_IDS, READING_LESSON_IDS } from "@/lib/lessons";
+import { DAILY_GOAL_XP, levelFromXP, type LevelInfo } from "@/lib/xp";
 
 const SAT_TIPS = [
   "Plug answer choices back in when the algebra gets messy; it is often faster than solving.",
@@ -24,7 +25,10 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const [progress, setProgress] = useState({
     totalXP: 0,
-    streak: 0,
+    level: levelFromXP(0) as LevelInfo,
+    streak: { current: 0, longest: 0, extended: false },
+    dailyGoal: { target: DAILY_GOAL_XP, earned: 0, completed: false },
+    streakAtRisk: false,
     completedLessonIds: [] as string[],
     mathCompleted: 0,
     readingCompleted: 0,
@@ -69,9 +73,12 @@ export default function DashboardPage() {
   const readingPercent = Math.round((progress.readingCompleted / READING_LESSON_IDS.length) * 100);
   const TOTAL_LESSONS = MATH_LESSON_IDS.length + READING_LESSON_IDS.length;
   const totalPercent = Math.round((lessonsCompleted / TOTAL_LESSONS) * 100);
-  const level = Math.floor(progress.totalXP / 50) + 1;
-  const xpToNext = 50 - (progress.totalXP % 50);
-  const nextTip = SAT_TIPS[progress.totalXP % SAT_TIPS.length] ?? SAT_TIPS[0]!;
+  // One tip per day rather than one per XP total, which changed the "daily" tip
+  // every time a student answered a question.
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000
+  );
+  const nextTip = SAT_TIPS[dayOfYear % SAT_TIPS.length] ?? SAT_TIPS[0]!;
 
   const nextMathId = MATH_LESSON_IDS.find((id) => !progress.completedLessonIds.includes(id));
   const nextReadingId = READING_LESSON_IDS.find((id) => !progress.completedLessonIds.includes(id));
@@ -97,10 +104,11 @@ export default function DashboardPage() {
       <motion.div className="mb-8 mt-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <ProgressTracker
           xp={progress.totalXP}
-          streak={progress.streak}
-          dailyGoal={20}
-          dailyEarned={0}
-          lessonsCompleted={lessonsCompleted}
+          level={progress.level}
+          streak={progress.streak.current}
+          longestStreak={progress.streak.longest}
+          streakAtRisk={progress.streakAtRisk}
+          dailyGoal={progress.dailyGoal}
         />
       </motion.div>
 
@@ -111,9 +119,12 @@ export default function DashboardPage() {
             <div className="w-9 h-9 rounded-lg bg-sky-500 dark:bg-sky-600 flex items-center justify-center">
               <Star className="w-4 h-4 text-white" />
             </div>
-            <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Level {level}</h3>
+            <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Lessons</h3>
           </div>
-          <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400">{xpToNext} XP to next level</p>
+          <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
+            <motion.div className="h-full bg-sky-500 dark:bg-sky-600" initial={{ width: 0 }} animate={{ width: `${totalPercent}%` }} transition={{ duration: 0.8 }} />
+          </div>
+          <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{lessonsCompleted}/{TOTAL_LESSONS} done</p>
         </motion.div>
         <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
           <div className="flex items-center gap-3 mb-2">

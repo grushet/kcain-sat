@@ -38,6 +38,13 @@ export function LessonViewer({ lessonId }: { lessonId: string }) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const completedRef = useRef(false);
   const [xpSaved, setXpSaved] = useState<"pending" | "saved" | "signed-out" | "error">("pending");
+  /**
+   * What the server actually paid. A lesson done before pays the smaller review
+   * award, so showing the lesson's own xpReward would promise XP that never
+   * arrived.
+   */
+  const [xpEarned, setXpEarned] = useState<number | null>(null);
+  const [streakDays, setStreakDays] = useState(0);
 
   const step = flow[flowIndex] ?? "content";
   useEffect(() => {
@@ -51,10 +58,19 @@ export function LessonViewer({ lessonId }: { lessonId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lessonId }),
       })
-        .then((r) => {
-          if (r.ok) setXpSaved("saved");
-          else if (r.status === 401) setXpSaved("signed-out");
-          else setXpSaved("error");
+        .then(async (r) => {
+          if (r.status === 401) {
+            setXpSaved("signed-out");
+            return;
+          }
+          if (!r.ok) {
+            setXpSaved("error");
+            return;
+          }
+          const d = await r.json().catch(() => null);
+          setXpSaved("saved");
+          if (typeof d?.xpEarned === "number") setXpEarned(d.xpEarned);
+          if (typeof d?.streak?.current === "number") setStreakDays(d.streak.current);
         })
         .catch(() => setXpSaved("error"));
     }
@@ -365,8 +381,17 @@ export function LessonViewer({ lessonId }: { lessonId: string }) {
                 <p className="text-emerald-700 dark:text-emerald-300">
                   {xpSaved === "signed-out"
                     ? `+${lesson.xpReward} XP available`
-                    : `+${lesson.xpReward} XP earned`}
+                    : xpEarned === null
+                    ? "Saving your progress…"
+                    : xpEarned > 0
+                    ? `+${xpEarned} XP earned`
+                    : "Reviewed. You already earned this lesson's XP today."}
                 </p>
+                {streakDays > 0 && xpSaved === "saved" && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400 font-medium mt-1">
+                    {streakDays} day streak
+                  </p>
+                )}
                 {xpSaved === "signed-out" && (
                   <p className="text-sm text-emerald-700 dark:text-emerald-300 mt-1">
                     <Link href="/auth/login" className="font-semibold underline">

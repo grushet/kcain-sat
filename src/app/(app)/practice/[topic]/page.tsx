@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Check, X, Calculator, ExternalLink, History } from "lucide-react";
+import { ArrowLeft, Check, X, Calculator, ExternalLink, History, Zap } from "lucide-react";
 import { getQuestionsByTopic } from "@/lib/questions";
 import type { PracticeBankQuestion } from "@/lib/questions";
 import { mathStr } from "@/components/MathText";
@@ -61,15 +61,18 @@ async function startPracticeSession(
 async function recordPracticeAnswer(
   sessionId: string,
   body: { questionId: string; selectedAnswer: string; orderIndex: number; timeSpent: number }
-): Promise<void> {
+): Promise<number> {
   try {
-    await fetch(`/api/practice/session/${sessionId}`, {
+    const r = await fetch(`/api/practice/session/${sessionId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    const d = await r.json().catch(() => null);
+    return typeof d?.xpEarned === "number" ? d.xpEarned : 0;
   } catch {
     // The answer is lost from the log, not from the screen the student is on.
+    return 0;
   }
 }
 
@@ -103,6 +106,7 @@ export default function PracticeTopicPage() {
   // The run being recorded. Held in a ref as well because answers are posted
   // from handlers that would otherwise capture a stale id.
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionXp, setSessionXp] = useState(0);
   const sessionIdRef = useRef<string | null>(null);
   const sessionCount = useRef(0);
   const questionShownAt = useRef<number>(Date.now());
@@ -117,6 +121,7 @@ export default function PracticeTopicPage() {
     setSelected(null);
     setShowResult(false);
     setScore(0);
+    setSessionXp(0);
     setQuestionsLoading(true);
     const next = getSessionQuestions(topic, diff);
     setQuestions(next);
@@ -186,7 +191,10 @@ export default function PracticeTopicPage() {
     // Recorded per answer rather than at the end, because a student who closes
     // the tab half way through still did the work.
     void ensureSession().then((id) => {
-      if (id) void recordPracticeAnswer(id, answer);
+      if (!id) return;
+      void recordPracticeAnswer(id, answer).then((earned) => {
+        if (earned > 0) setSessionXp((x) => x + earned);
+      });
     });
   };
 
@@ -270,7 +278,14 @@ export default function PracticeTopicPage() {
       <div className="mb-4">
         <div className="flex justify-between text-sm text-sat-gray-600 dark:text-sat-gray-400 mb-1">
           <span>Question {current + 1} of {questions.length}</span>
-          <span>Score: {score}</span>
+          <span className="flex items-center gap-3">
+            <span>Score: {score}</span>
+            {sessionXp > 0 && (
+              <span className="inline-flex items-center gap-1 font-semibold text-sat-primary">
+                <Zap className="w-3.5 h-3.5" />+{sessionXp} XP
+              </span>
+            )}
+          </span>
         </div>
         <div className="h-2 rounded-full bg-sat-gray-200 dark:bg-sat-gray-700 overflow-hidden">
           <motion.div

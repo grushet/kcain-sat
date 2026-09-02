@@ -8,6 +8,8 @@ import {
   upsertQuestions,
 } from "@/lib/question-store";
 import { practiceTopicSection } from "@/lib/practice-topics";
+import { grantXP } from "@/lib/xp-service";
+import { XP, XP_SOURCE } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
@@ -163,7 +165,27 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     data: { answered, correct },
   });
 
-  return NextResponse.json({ ok: true, isCorrect, answered, correct });
+  // Turning up pays, and being right pays double. Rewarding only correct answers
+  // would pay the most to the students who need the practice least.
+  //
+  // Scoped to once per question per day so the same 25-question set cannot be
+  // replayed for XP: a bigger day's practice has to mean more questions, not the
+  // same ones again.
+  const xp = await grantXP(userId, {
+    amount: XP.practiceAnswered + (isCorrect ? XP.practiceCorrectBonus : 0),
+    source: XP_SOURCE.practice,
+    reference: questionId,
+    scope: "daily",
+  });
+
+  return NextResponse.json({
+    ok: true,
+    isCorrect,
+    answered,
+    correct,
+    xpEarned: xp.awarded,
+    streak: xp.streak,
+  });
 }
 
 /** Marks a run finished, which is what separates it from one simply left open. */
@@ -171,10 +193,36 @@ export async function PATCH(_req: NextRequest, { params }: Ctx) {
   const userId = await currentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await prisma.practiceSession.updateMany({
-    where: { id: params.id, userId, completedAt: null },
+  const session = await prisma.practiceSession.findFirst({
+    where: { id: params.id, userId },
+    select: { id: true, answered: true, correct: true, completedAt: true },
+  });
+  if (!session) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (session.completedAt) {
+    return NextResponse.json({ ok: true, xpEarned: 0, alreadyClosed: true });
+  }
+
+  await prisma.practiceSession.update({
+    where: { id: session.id },
     data: { completedAt: new Date() },
   });
 
-  return NextResponse.json({ ok: true });
+  // A clean sweep of a real set is worth celebrating. The minimum stops three
+  // easy questions from paying the same as a full run.
+  let xpEarned = 0;
+  if (
+    session.answered >= XP.practicePerfectMinimum &&
+    session.correct === session.answered
+  ) {
+    const bonus = await grantXP(userId, {
+      amount: XP.practicePerfect,
+      source: XP_SOURCE.practicePerfect,
+      reference: session.id,
+      scope: "once",
+    });
+    xpEarned = bonus.awarded;
+  }
+
+  return NextResponse.json({ ok: true, xpEarned, alreadyClosed: false });
 }

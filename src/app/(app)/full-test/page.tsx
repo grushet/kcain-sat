@@ -100,7 +100,7 @@ async function fetchModuleQuestions(
 async function saveModuleState(
   attemptId: string,
   body: Record<string, unknown>
-): Promise<boolean> {
+): Promise<{ ok: boolean; xpEarned: number }> {
   try {
     const r = await fetch(`/api/full-test/attempt/${attemptId}/module`, {
       method: "PUT",
@@ -108,9 +108,11 @@ async function saveModuleState(
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000),
     });
-    return r.ok;
+    if (!r.ok) return { ok: false, xpEarned: 0 };
+    const d = await r.json().catch(() => null);
+    return { ok: true, xpEarned: typeof d?.xpEarned === "number" ? d.xpEarned : 0 };
   } catch {
-    return false;
+    return { ok: false, xpEarned: 0 };
   }
 }
 
@@ -174,6 +176,20 @@ function cacheLastTestLocally(
   }
 }
 
+interface XpAward {
+  source: string;
+  label: string;
+  amount: number;
+}
+
+interface XpResult {
+  total: number;
+  streak: { current: number; longest: number; extended: boolean };
+  isPersonalBest: boolean;
+  previousBest: number | null;
+  awards: XpAward[];
+}
+
 const SAVE_WARNING =
   "Your progress is not saving right now. Check your connection; the test will keep running.";
 
@@ -193,6 +209,9 @@ export default function FullTestPage() {
   const [resumable, setResumable] = useState<AttemptPayload | null>(null);
   const [checkingResume, setCheckingResume] = useState(true);
   const [completedAttempt, setCompletedAttempt] = useState<AttemptPayload | null>(null);
+  const [xpResult, setXpResult] = useState<XpResult | null>(null);
+  /** XP paid for the module just handed in, shown on the break screen. */
+  const [moduleXp, setModuleXp] = useState(0);
 
   // Pre-fetched module questions
   const [math1Qs, setMath1Qs] = useState<ClientQuestion[]>([]);
@@ -265,7 +284,7 @@ export default function FullTestPage() {
       const live = { ...liveRef.current, ...over };
       if (!id || !live.key || live.questions.length === 0) return false;
 
-      const ok = await saveModuleState(id, {
+      const { ok, xpEarned } = await saveModuleState(id, {
         key: live.key,
         harder: live.harder,
         questionIds: live.questions.map((q) => q.id),
@@ -277,6 +296,7 @@ export default function FullTestPage() {
         status: over.status ?? "in_progress",
       });
       setSaveWarning(ok ? null : SAVE_WARNING);
+      if (xpEarned > 0) setModuleXp(xpEarned);
       return ok;
     },
     []
@@ -387,6 +407,7 @@ export default function FullTestPage() {
 
   function startModule(qs: ClientQuestion[], seconds: number, harder: boolean) {
     finishing.current = false;
+    setModuleXp(0);
     setActiveQs(qs);
     setCurrentIdx(0);
     setAnswers(new Array(qs.length).fill(null));
@@ -431,7 +452,7 @@ export default function FullTestPage() {
       if (id) {
         // Both first modules are registered up front, so a crash during the
         // reading section still leaves the math questions waiting on resume.
-        const results = await Promise.all([
+        const registered = await Promise.all([
           saveModuleState(id, {
             key: "rw1",
             harder: false,
@@ -455,7 +476,7 @@ export default function FullTestPage() {
             status: "in_progress",
           }),
         ]);
-        if (results.some((ok) => !ok)) setSaveWarning(SAVE_WARNING);
+        if (registered.some((r) => !r.ok)) setSaveWarning(SAVE_WARNING);
         void savePhase(id, "rw1");
       }
 
@@ -554,7 +575,7 @@ export default function FullTestPage() {
       const rw2 = await fetchModuleQuestions("rw", "2", harder, excludeIds);
       const id = attemptIdRef.current;
       if (id) {
-        const ok = await saveModuleState(id, {
+        const { ok } = await saveModuleState(id, {
           key: "rw2",
           harder,
           questionIds: rw2.map((q) => q.id),
@@ -594,7 +615,7 @@ export default function FullTestPage() {
       const math2 = await fetchModuleQuestions("math", "2", harder, excludeIds);
       const id = attemptIdRef.current;
       if (id) {
-        const ok = await saveModuleState(id, {
+        const { ok } = await saveModuleState(id, {
           key: "math2",
           harder,
           questionIds: math2.map((q) => q.id),
@@ -634,6 +655,7 @@ export default function FullTestPage() {
       const d = await r.json().catch(() => null);
       if (r.ok && d?.attempt) {
         setCompletedAttempt(d.attempt as AttemptPayload);
+        if (d.xp) setXpResult(d.xp as XpResult);
         setSaveWarning(null);
       } else {
         setSaveWarning(SAVE_WARNING);
@@ -650,6 +672,8 @@ export default function FullTestPage() {
     setAttemptId(null);
     attemptIdRef.current = null;
     setCompletedAttempt(null);
+    setXpResult(null);
+    setModuleXp(0);
     setMath1Qs([]);
     setActiveQs([]);
     setAnswers([]);
@@ -690,6 +714,18 @@ export default function FullTestPage() {
     if (phase === "math2") return "Math · Module 2";
     return "";
   }
+
+  const moduleXpPill =
+    moduleXp > 0 ? (
+      <motion.p
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-sat-primary bg-sat-primary/10 rounded-full px-3 py-1"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.15 }}
+      >
+        <Zap className="w-3.5 h-3.5" /> +{moduleXp} XP
+      </motion.p>
+    ) : null;
 
   const saveBanner = saveWarning ? (
     <div className="mb-5 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-start gap-2.5">
@@ -1022,6 +1058,7 @@ export default function FullTestPage() {
             {score}
             <span className="text-2xl text-sat-gray-400">/{rw1Done.questions.length}</span>
           </p>
+          {moduleXpPill}
           <p className="text-sm text-sat-gray-600 dark:text-sat-gray-400">
             {goingHarder
               ? "Great work! Module 2 will include more challenging questions."
@@ -1063,6 +1100,7 @@ export default function FullTestPage() {
               Up next: Math Section
             </p>
           </div>
+          {moduleXpPill}
           <ul className="text-sm text-sat-gray-600 dark:text-sat-gray-400 space-y-1 text-left">
             <li>• 44 questions across 2 modules</li>
             <li>• 22 questions per module</li>
@@ -1106,6 +1144,7 @@ export default function FullTestPage() {
             {score}
             <span className="text-2xl text-sat-gray-400">/{math1Done.questions.length}</span>
           </p>
+          {moduleXpPill}
           <p className="text-sm text-sat-gray-600 dark:text-sat-gray-400">
             {goingHarder
               ? "Excellent! Module 2 will be more challenging."
@@ -1192,6 +1231,49 @@ export default function FullTestPage() {
             <p className="text-xs text-sat-gray-400 mt-1">{mathRaw}/{mathTotal} correct</p>
           </div>
         </div>
+
+        {xpResult && xpResult.total > 0 && (
+          <motion.div
+            className="card p-5 mb-6 border-2 border-sat-primary/30 bg-sat-primary/5"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-sat-primary flex items-center justify-center">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-display font-bold text-2xl text-sat-gray-900 dark:text-white leading-none">
+                  +{xpResult.total} XP
+                </p>
+                <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mt-1">
+                  {xpResult.isPersonalBest
+                    ? xpResult.previousBest === null
+                      ? "Your first full test. Everything from here is measured against it."
+                      : `New personal best, up from ${xpResult.previousBest}.`
+                    : "Earned for this sitting"}
+                </p>
+              </div>
+            </div>
+            <ul className="space-y-1 border-t border-sat-primary/20 pt-3">
+              {xpResult.awards.map((a) => (
+                <li key={a.source} className="flex items-center justify-between text-sm">
+                  <span className="text-sat-gray-700 dark:text-sat-gray-300">{a.label}</span>
+                  <span className="font-semibold text-sat-gray-900 dark:text-white tabular-nums">
+                    +{a.amount}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {xpResult.streak.current > 0 && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-3">
+                {xpResult.streak.current} day streak
+                {xpResult.streak.extended ? " and counting" : ""}
+              </p>
+            )}
+          </motion.div>
+        )}
 
         {!saveWarning && (
           <p className="text-sm text-sat-gray-500 dark:text-sat-gray-400 mb-6">

@@ -228,17 +228,29 @@ model UserQuestionAnswer {
   @@index([questionId])
 }
 
+/// Every XP award, one row each. Kept as a ledger rather than a running total on
+/// User so an award can be explained back to the student ("+50 personal best"),
+/// and so the once-per-day rules are enforced by reading what was already given.
 model XPRecord {
   id        String   @id @default(cuid())
   userId    String
   amount    Int
-  source    String // "lesson" | "streak" | "bonus" | "practice"
-  reference String? // lessonId or other reference
+  /// See XP_SOURCE in src/lib/xp.ts for the list and what each one is worth.
+  source    String
+  /// What earned it: a lessonId, a questionId, an attemptId.
+  reference String?
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Supports the "has this already been granted today" check on every award.
+  @@index([userId, source, reference, createdAt])
+  @@index([userId, createdAt])
 }
 
+/// `lastActiveAt` holds UTC midnight of the last study day with any activity, not
+/// a wall-clock timestamp, so the gap between two days is exact arithmetic rather
+/// than a comparison that drifts with the hour someone happens to study.
 model Streak {
   id            String   @id @default(cuid())
   userId        String
@@ -252,11 +264,14 @@ model Streak {
   @@unique([userId])
 }
 
+/// One row per study day per student. `date` is UTC midnight of the calendar date
+/// in the app's study timezone, so a student working at 9pm gets credit for that
+/// day rather than for tomorrow.
 model DailyGoal {
   id        String   @id @default(cuid())
   userId    String
   date      DateTime
-  targetXP  Int      @default(20)
+  targetXP  Int      @default(30)
   earnedXP  Int      @default(0)
   completed Boolean  @default(false)
 
