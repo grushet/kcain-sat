@@ -33,6 +33,8 @@ model User {
   questionAnswers  UserQuestionAnswer[]
   testAttempts     TestAttempt[]
   practiceSessions PracticeSession[]
+  plannerTasks     PlannerTask[]
+  plannerSettings  PlannerSettings?
 }
 
 model Account {
@@ -396,6 +398,91 @@ model Subscription {
   currentPeriodEnd     DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============ TASK PLANNER (tasks.cainsat.org) ============
+
+// The planner used to live in its own Firebase project with its own accounts.
+// These models bring it onto the same user record as the SAT site so a student
+// signs in once.
+//
+// Dates here are deliberately plain "YYYY-MM-DD" strings, not DateTime. A due
+// date is a calendar day, not an instant: storing it as a timestamp forces a
+// timezone on it and shifts the day for anyone behind UTC, which is exactly the
+// off-by-one the old client kept hitting.
+
+model PlannerTask {
+  /// Generated client-side (crypto.randomUUID) so an offline edit keeps its identity.
+  id     String @id
+  userId String
+
+  text       String
+  completed  Boolean @default(false)
+  /// "YYYY-MM-DD", or null for an undated task.
+  dueDate    String?
+  /// "high" | "med" | "low", or null for no priority.
+  importance String?
+
+  /// Repeat interval, e.g. n=2 unit="weeks". Both null when the task does not repeat.
+  repeatN    Int?
+  repeatUnit String?
+
+  /// Local wall-clock "YYYY-MM-DDTHH:mm". Not an instant, for the same reason as dueDate.
+  reminder      String?
+  reminderFired Boolean @default(false)
+
+  /// Position in the list. The client prepends new tasks, so this descends.
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subtasks PlannerSubtask[]
+
+  @@index([userId, sortOrder])
+  @@index([userId, dueDate])
+}
+
+model PlannerSubtask {
+  id     String @id
+  taskId String
+
+  text       String
+  completed  Boolean @default(false)
+  dueDate    String?
+  importance String?
+  sortOrder  Int     @default(0)
+
+  task PlannerTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, sortOrder])
+}
+
+// One row per user: view preferences plus the pomodoro timer.
+model PlannerSettings {
+  userId String @id
+
+  /// "" | "date" | "importance"
+  groupBy String @default("")
+  /// "" | "date" | "importance"
+  sortBy  String @default("")
+
+  pomoWork     Int @default(25)
+  pomoShort    Int @default(5)
+  pomoLong     Int @default(15)
+  pomoSessions Int @default(4)
+
+  /// "work" | "short" | "long"
+  pomoMode           String    @default("work")
+  pomoRemaining      Int       @default(1500)
+  pomoCurrentSession Int       @default(0)
+  /// Set while the timer is running so a reload can recover the elapsed time
+  /// instead of trusting a counter that stalls in a background tab.
+  pomoRunningSince   DateTime?
+
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

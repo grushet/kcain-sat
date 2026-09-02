@@ -32,6 +32,7 @@ import {
   studyDayKey,
   studyDaysBetween,
 } from "../src/lib/xp";
+import { normaliseTasks, MAX_TEXT } from "../src/lib/planner-normalise";
 
 let fails = 0;
 let checks = 0;
@@ -198,6 +199,37 @@ eq(
 const beforeDst = new Date("2026-11-01T02:00:00Z"); // Oct 31 in Toronto
 const afterDst = new Date("2026-11-02T17:00:00Z"); // Nov 2 in Toronto
 eq("day gaps survive a clock change", studyDaysBetween(studyDay(beforeDst), studyDay(afterDst)), 2);
+
+// ---- planner writes -------------------------------------------------------
+// The planner posts from another origin, so this payload is fully client
+// controlled. These check that nothing unvalidated reaches the database.
+
+console.log("");
+console.log("── planner writes ──────────────────────────────────────────────");
+
+const okTask = { id: "a1", text: "Essay", completed: false };
+
+eq("a plain task survives normalising", normaliseTasks([okTask]).length, 1);
+eq("a task with no id is dropped", normaliseTasks([{ text: "no id" }, okTask]).map((t) => t.id), ["a1"]);
+eq("a task with blank text is dropped", normaliseTasks([{ id: "b", text: "   " }, okTask]).map((t) => t.id), ["a1"]);
+eq("an id with path characters is rejected", normaliseTasks([{ id: "../../etc/passwd", text: "x" }]).length, 0);
+eq("a duplicate id is only written once", normaliseTasks([okTask, { id: "a1", text: "again" }]).length, 1);
+eq("dropped rows leave no gap in the ordering", normaliseTasks([{ text: "dropped" }, okTask, { id: "a2", text: "second" }]).map((t) => t.sortOrder), [0, 1]);
+eq("an invalid due date becomes null", normaliseTasks([{ ...okTask, dueDate: "not-a-date" }])[0].dueDate, null);
+eq("a valid due date is kept as the day it names", normaliseTasks([{ ...okTask, dueDate: "2026-09-01" }])[0].dueDate, "2026-09-01");
+eq("a timestamp is not accepted as a due date", normaliseTasks([{ ...okTask, dueDate: "2026-09-01T00:00:00Z" }])[0].dueDate, null);
+eq("an unknown importance becomes null", normaliseTasks([{ ...okTask, importance: "critical" }])[0].importance, null);
+eq("a known importance is kept", normaliseTasks([{ ...okTask, importance: "high" }])[0].importance, "high");
+eq("a repeat with a bad unit is discarded whole", normaliseTasks([{ ...okTask, repeat: { n: 2, unit: "fortnights" } }]).map((t) => [t.repeatN, t.repeatUnit]), [[null, null]]);
+eq("a zero repeat is discarded", normaliseTasks([{ ...okTask, repeat: { n: 0, unit: "days" } }])[0].repeatN, null);
+eq("a good repeat is kept", normaliseTasks([{ ...okTask, repeat: { n: 2, unit: "weeks" } }]).map((t) => [t.repeatN, t.repeatUnit]), [[2, "weeks"]]);
+eq("an invalid reminder becomes null", normaliseTasks([{ ...okTask, reminder: "9am tomorrow" }])[0].reminder, null);
+eq("a wall-clock reminder is kept verbatim", normaliseTasks([{ ...okTask, reminder: "2026-09-01T09:00" }])[0].reminder, "2026-09-01T09:00");
+eq("runaway text is truncated, not rejected", normaliseTasks([{ id: "a1", text: "x".repeat(5000) }])[0].text.length, MAX_TEXT);
+eq("completed is coerced to a real boolean", normaliseTasks([{ ...okTask, completed: "yes" }])[0].completed, true);
+eq("subtasks are normalised too", normaliseTasks([{ ...okTask, subtasks: [{ id: "s1", text: "part" }, { text: "no id" }] }])[0].subtasks.map((s) => s.id), ["s1"]);
+eq("a non-array subtasks field does not throw", normaliseTasks([{ ...okTask, subtasks: "nope" }])[0].subtasks, []);
+eq("a null entry in the list is skipped", normaliseTasks([null, okTask]).length, 1);
 
 console.log(
   fails === 0 ? `\n${checks} checks, all passing` : `\n${fails} of ${checks} checks FAILED`
