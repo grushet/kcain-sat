@@ -33,6 +33,9 @@ import {
   studyDaysBetween,
 } from "../src/lib/xp";
 import { normaliseTasks, MAX_TEXT } from "../src/lib/planner-normalise";
+import { safeCallbackUrl, DEFAULT_AFTER_LOGIN } from "../src/lib/login-redirect";
+import { SESSION_COOKIE_NAME, SESSION_COOKIE_DOMAIN } from "../src/lib/session-cookie";
+import { readFileSync } from "node:fs";
 
 let fails = 0;
 let checks = 0;
@@ -230,6 +233,36 @@ eq("completed is coerced to a real boolean", normaliseTasks([{ ...okTask, comple
 eq("subtasks are normalised too", normaliseTasks([{ ...okTask, subtasks: [{ id: "s1", text: "part" }, { text: "no id" }] }])[0].subtasks.map((s) => s.id), ["s1"]);
 eq("a non-array subtasks field does not throw", normaliseTasks([{ ...okTask, subtasks: "nope" }])[0].subtasks, []);
 eq("a null entry in the list is skipped", normaliseTasks([null, okTask]).length, 1);
+
+// ---- signing back in ------------------------------------------------------
+// Both of these guard the outage where every signed-in student was bounced
+// straight back to the login page and the planner could never save anything.
+console.log("");
+console.log("── login redirect ──────────────────────────────────────────────");
+
+eq("no callbackUrl lands on the dashboard", safeCallbackUrl(null), DEFAULT_AFTER_LOGIN);
+eq("a relative path is honoured", safeCallbackUrl("/history"), "/history");
+eq("the planner is allowed back", safeCallbackUrl("https://tasks.cainsat.org/main_page.html"), "https://tasks.cainsat.org/main_page.html");
+eq("another origin is refused", safeCallbackUrl("https://evil.example/steal"), DEFAULT_AFTER_LOGIN);
+eq("a protocol-relative url is refused", safeCallbackUrl("//evil.example/steal"), DEFAULT_AFTER_LOGIN);
+eq("a lookalike host is refused", safeCallbackUrl("https://tasks.cainsat.org.evil.example/"), DEFAULT_AFTER_LOGIN);
+eq("junk is refused", safeCallbackUrl("javascript:alert(1)"), DEFAULT_AFTER_LOGIN);
+
+// The middleware runs `getToken` itself and cannot import authOptions, so the
+// cookie name is shared through a constant. If that link is ever broken again,
+// the middleware silently reads NextAuth's default name, finds nothing, and
+// every gated page redirects to /auth/login forever.
+const middlewareSrc = readFileSync(new URL("../src/middleware.ts", import.meta.url), "utf8");
+eq(
+  "the middleware is told the session cookie name",
+  middlewareSrc.includes("SESSION_COOKIE_NAME") && middlewareSrc.includes("sessionToken"),
+  true
+);
+eq(
+  "the cookie name and domain are set together",
+  Boolean(SESSION_COOKIE_NAME) === Boolean(SESSION_COOKIE_DOMAIN),
+  true
+);
 
 console.log(
   fails === 0 ? `\n${checks} checks, all passing` : `\n${fails} of ${checks} checks FAILED`

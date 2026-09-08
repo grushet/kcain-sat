@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { KcainLogo } from "@/components/layout/KcainLogo";
+import { safeCallbackUrl } from "@/lib/login-redirect";
 
 // Email/password sign-in is dormant until an email provider (Resend, SES, etc.)
 // is configured — flip this on once EMAIL_FROM / RESEND_API_KEY are set.
@@ -54,6 +55,9 @@ function LoginForm() {
   // return value, so surface those alongside any locally-set error.
   const displayedError = error || describeAuthError(searchParams.get("error"));
 
+  // Where to land once signed in: back to the planner when it sent us here.
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -68,8 +72,13 @@ function LoginForm() {
       setError("Invalid email or password. New user? Verify your email first.");
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    if (callbackUrl.startsWith("/")) {
+      router.push(callbackUrl);
+      router.refresh();
+    } else {
+      // Another origin (the planner): a client-side push cannot leave this app.
+      window.location.href = callbackUrl;
+    }
   }
 
   async function handleGoogleSignIn() {
@@ -78,7 +87,7 @@ function LoginForm() {
     // OAuth always performs a full-page redirect to the provider: this call does
     // not return, and `redirect: false` is ignored for non-credentials providers.
     // Failures come back as ?error= on this page, handled by displayedError.
-    await signIn("google", { callbackUrl: "/dashboard" });
+    await signIn("google", { callbackUrl });
   }
 
   return (

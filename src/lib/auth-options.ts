@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth";
 import { isEmailAuthEnabled } from "@/lib/email-auth";
+import { SESSION_COOKIE_DOMAIN, SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 
 /**
  * Only registered while email auth is switched on. With no mail provider
@@ -45,41 +46,24 @@ const credentialsProvider = CredentialsProvider({
  * makes them same-site: a SameSite=Lax cookie is still sent on the planner's
  * fetches once the cookie is scoped to the parent domain.
  *
- * Only applied when NEXTAUTH_URL is actually on cainsat.org. On localhost the
- * name has no __Secure- prefix and a domain would stop the cookie being set at
- * all, so dev keeps NextAuth's defaults.
+ * The name and domain live in `session-cookie` because the middleware needs the
+ * same name and cannot import this module (it would drag Prisma onto the edge
+ * runtime). They must not drift apart -- see the comment there.
  */
 const PLANNER_ORIGIN = "https://tasks.cainsat.org";
 
-const cookieDomain = (() => {
-  try {
-    const host = new URL(process.env.NEXTAUTH_URL ?? "").hostname;
-    return host === "cainsat.org" || host.endsWith(".cainsat.org")
-      ? ".cainsat.org"
-      : undefined;
-  } catch {
-    return undefined;
-  }
-})();
-
 export const authOptions: NextAuthOptions = {
-  ...(cookieDomain
+  ...(SESSION_COOKIE_DOMAIN && SESSION_COOKIE_NAME
     ? {
         cookies: {
           sessionToken: {
-            // Deliberately NOT NextAuth's default name. Everyone signed in today
-            // holds a host-only cookie under the default name; a new one scoped
-            // to .cainsat.org is a *different* cookie, so the browser would send
-            // both and the server would read whichever came first. That is a
-            // login loop for every existing user. A distinct name cannot collide,
-            // so the old cookie is simply ignored and expires on its own.
-            name: "__Secure-cain.session-token",
+            name: SESSION_COOKIE_NAME,
             options: {
               httpOnly: true,
               sameSite: "lax" as const,
               path: "/",
               secure: true,
-              domain: cookieDomain,
+              domain: SESSION_COOKIE_DOMAIN,
             },
           },
         },
