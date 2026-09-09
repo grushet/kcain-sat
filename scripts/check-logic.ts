@@ -35,7 +35,8 @@ import {
 import { normaliseTasks, MAX_TEXT } from "../src/lib/planner-normalise";
 import { safeCallbackUrl, DEFAULT_AFTER_LOGIN } from "../src/lib/login-redirect";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_DOMAIN } from "../src/lib/session-cookie";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 
 let fails = 0;
 let checks = 0;
@@ -263,6 +264,32 @@ eq(
   Boolean(SESSION_COOKIE_NAME) === Boolean(SESSION_COOKIE_DOMAIN),
   true
 );
+
+// ---- source hygiene -------------------------------------------------------
+// A literal NUL byte sat inside what looked like a one-space string in the
+// planner tasks route for its entire history. It is invisible in every editor,
+// it survives the build as a \0 escape, and Postgres rejects any text parameter
+// containing one (22021), so every task save 500'd and nothing was ever stored.
+// Nothing else catches this, so it is checked here.
+console.log("");
+console.log("── source hygiene ──────────────────────────────────────────────");
+
+const SOURCE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs|json|prisma|css)$/;
+const SKIP_DIRS = new Set(["node_modules", ".next", ".git", ".vercel", "dist", "build"]);
+
+function sourceFiles(dir: string, found: string[] = []): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (SKIP_DIRS.has(entry.name)) continue;
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) sourceFiles(full, found);
+    else if (SOURCE_EXT.test(entry.name)) found.push(full);
+  }
+  return found;
+}
+
+const scanned = sourceFiles(".");
+const withNul = scanned.filter((f) => readFileSync(f).includes(0));
+eq(`no NUL bytes in any of the ${scanned.length} source files`, withNul, []);
 
 console.log(
   fails === 0 ? `\n${checks} checks, all passing` : `\n${fails} of ${checks} checks FAILED`

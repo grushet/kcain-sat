@@ -79,11 +79,18 @@ export async function PUT(req: Request) {
     return corsJson(req, { ok: true, changed: 0 });
   }
 
-  await prisma.plannerSettings.upsert({
-    where: { userId },
-    create: { userId, ...data },
-    update: data,
-  });
+  try {
+    await prisma.plannerSettings.upsert({
+      where: { userId },
+      create: { userId, ...data },
+      update: data,
+    });
+  } catch (err) {
+    // As in the tasks route: an unguarded throw becomes a CORS-less 500 that
+    // the browser will not let the planner read.
+    console.error("[planner] settings write failed", err);
+    return corsJson(req, { error: "Could not save settings" }, { status: 500 });
+  }
 
   return corsJson(req, { ok: true, changed: Object.keys(data).length });
 }
