@@ -13,13 +13,14 @@ export const runtime = "nodejs";
 const PLANNER_URL = "https://tasks.cainsat.org/main_page.html";
 
 /**
- * Vercel Cron hits this on a schedule (see vercel.json). It also accepts a
- * manual GET carrying the secret, so an external pinger can drive it on the
- * Hobby plan where cron only runs once a day.
+ * Driven every few minutes by an external pinger (cron-job.org), which sends
+ * `Authorization: Bearer ${CRON_SECRET}`. Vercel Cron sends that same header on
+ * its own calls and would work identically, but the Hobby plan rejects any
+ * schedule finer than daily, so vercel.json deliberately carries no `crons`.
  *
- * Vercel injects `Authorization: Bearer ${CRON_SECRET}` on its own calls when
- * CRON_SECRET is set. Without the secret configured the route refuses outright
- * rather than run unauthenticated.
+ * A `?key=` query param is accepted as a fallback for pingers that cannot set a
+ * header. Without CRON_SECRET configured the route refuses outright rather than
+ * run unauthenticated.
  */
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;

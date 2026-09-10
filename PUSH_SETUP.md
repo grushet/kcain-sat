@@ -18,7 +18,7 @@ back to in-tab reminders only — nothing breaks.
 | "Is this reminder due in the student's zone" — pure, unit-tested | `src/lib/planner-reminders.ts` |
 | VAPID setup + one send helper (`web-push`) | `src/lib/planner-push.ts` |
 | Scan + fire, runs on a schedule | `GET /api/cron/planner-reminders` |
-| Schedule (every 5 min) | `vercel.json` `crons` |
+| Schedule (every 5 min) | an external pinger — step 6 below |
 | Client: ask permission, subscribe, report time zone | planner `main.js` `syncPushSubscription()` |
 | Client: show the pushed notification | planner `sw.js` `push` handler |
 
@@ -27,24 +27,33 @@ A reminder that fires in-tab and via push in the same minute carries the same
 
 ## Setup
 
-### 1. Generate a VAPID key pair
+Everything below stays inside the free tier. Vercel Hobby is fine; the one thing
+it cannot do is run a cron more than once a day, so the schedule lives off Vercel.
+
+### 1. Keys
+
+A VAPID pair and a `CRON_SECRET` are already in the local `.env`. Reuse those —
+regenerating the pair invalidates every subscription already stored. If you ever
+do need a fresh pair:
 
 ```bash
 npx web-push generate-vapid-keys
 ```
 
-### 2. Set env vars (local `.env` and Vercel → Settings → Environment Variables)
+### 2. Put the four vars in Vercel
 
-```env
-VAPID_PUBLIC_KEY="B..."        # from step 1
-VAPID_PRIVATE_KEY="..."        # from step 1
-VAPID_SUBJECT="mailto:admin@cainsat.org"
-CRON_SECRET="openssl rand -base64 32"
+Vercel → the `kcain-sat` project → Settings → Environment Variables. Add each for
+Production, Preview and Development, copying the values out of `SAT/.env`:
+
+```
+VAPID_PUBLIC_KEY
+VAPID_PRIVATE_KEY
+VAPID_SUBJECT
+CRON_SECRET
 ```
 
-Vercel Cron automatically sends `Authorization: Bearer $CRON_SECRET` to the cron
-route once `CRON_SECRET` is set. The route refuses to run if the secret is
-missing.
+None of these is `NEXT_PUBLIC_`. The browser gets the public key at runtime from
+`GET /api/planner/push`, so no rebuild is needed when it changes.
 
 ### 3. Push the schema change
 
@@ -53,25 +62,64 @@ npm run db:push
 ```
 
 Adds `PlannerPushSubscription` and its relation on `User`. No data migration.
+`.env` points at the production Supabase pooler, so this runs against prod.
 
-### 4. Deploy
+### 4. Turn on RLS for the new table
 
-`web-push` is a new dependency — make sure `npm install` has run. `vercel.json`
-now carries a `crons` entry; Vercel picks it up on deploy.
+`prisma db push` creates tables with row-level security **off**, which would leave
+this one readable through Supabase's PostgREST anon key. Every other table here has
+RLS on with no policies. Match it — Supabase → SQL Editor:
 
-### 5. Verify
+```sql
+ALTER TABLE public."PlannerPushSubscription" ENABLE ROW LEVEL SECURITY;
+```
+
+Prisma connects as `postgres`, which bypasses RLS, so the app is unaffected.
+
+### 5. Deploy
+
+Push `main` in both repos. `web-push` is a new dependency; Vercel installs it from
+the lockfile. `vercel.json` carries no `crons` entry on purpose — a `*/5` schedule
+there fails the build on Hobby.
+
+### 6. Schedule the cron route
+
+Any free pinger works. [cron-job.org](https://cron-job.org) is the simplest:
+
+- URL: `https://www.cainsat.org/api/cron/planner-reminders`
+- Schedule: every 5 minutes
+- Request method: GET
+- Add a header — `Authorization: Bearer <CRON_SECRET>`
+
+Prefer the header over `?key=`, which would put the secret in Vercel's request
+logs. GitHub Actions `schedule:` also works but drifts by 10–20 minutes under load
+and switches itself off after 60 days without a commit.
+
+Reminder accuracy is the ping interval: at every 5 minutes a reminder lands 0–5
+minutes late.
+
+## Verify
 
 - Open tasks.cainsat.org, set a reminder a couple of minutes out, allow
   notifications when the bell prompts, then close the tab.
-- Hit the cron route by hand:
-  `curl "https://www.cainsat.org/api/cron/planner-reminders?key=$CRON_SECRET"`
-  — it returns `{ checked, due, sent, pruned, fired }`.
-- The notification should arrive with the tab shut.
+- Confirm the subscription stored: one row in `PlannerPushSubscription` carrying
+  your browser's endpoint and IANA time zone.
+- Hit the route by hand:
 
-## Plan note
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://www.cainsat.org/api/cron/planner-reminders
+```
 
-`vercel.json` uses `*/5 * * * *`. **Vercel Hobby only runs crons once per day**
-and may reject a sub-daily schedule. On Hobby either change it to `0 * * * *`
-(hourly, reminders land up to an hour late) or keep a daily Vercel cron and drive
-the real cadence from an external pinger (cron-job.org, GitHub Actions, an uptime
-monitor) calling the route every few minutes with `?key=$CRON_SECRET`.
+It returns `{ checked, due, sent, pruned, fired }`. The notification should arrive
+with the tab shut.
+
+## Gotchas
+
+- **Chrome on desktop must be running** (any window, or in the background) to
+  receive a push. Chrome fully quit means no notification until it reopens.
+- **iOS needs Add to Home Screen first.** Safari grants push only to an installed
+  web app; that is what the manifest is for.
+- **A reminder fires once.** `reminderFired` is set even when every endpoint is
+  dead, so a student with no working subscription does not accumulate a backlog.
+- **Windows Focus Assist / Do Not Disturb** silently swallows notifications and
+  looks exactly like a broken push.
