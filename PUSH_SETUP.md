@@ -18,7 +18,7 @@ back to in-tab reminders only — nothing breaks.
 | "Is this reminder due in the student's zone" — pure, unit-tested | `src/lib/planner-reminders.ts` |
 | VAPID setup + one send helper (`web-push`) | `src/lib/planner-push.ts` |
 | Scan + fire, runs on a schedule | `GET /api/cron/planner-reminders` |
-| Schedule (every 5 min) | an external pinger — step 6 below |
+| Schedule (every minute) | an external pinger — step 6 below |
 | Client: ask permission, subscribe, report time zone | planner `main.js` `syncPushSubscription()` |
 | Client: show the pushed notification | planner `sw.js` `push` handler |
 
@@ -87,16 +87,20 @@ there fails the build on Hobby.
 Any free pinger works. [cron-job.org](https://cron-job.org) is the simplest:
 
 - URL: `https://www.cainsat.org/api/cron/planner-reminders`
-- Schedule: every 5 minutes
+- Schedule: every minute
 - Request method: GET
-- Add a header — `Authorization: Bearer <CRON_SECRET>`
+- Add a header — `Authorization: Bearer <CRON_SECRET>` (cron-job.org puts both
+  the method and the headers on its ADVANCED tab, not the one you land on)
 
 Prefer the header over `?key=`, which would put the secret in Vercel's request
 logs. GitHub Actions `schedule:` also works but drifts by 10–20 minutes under load
 and switches itself off after 60 days without a commit.
 
-Reminder accuracy is the ping interval: at every 5 minutes a reminder lands 0–5
-minutes late.
+Reminder accuracy is the ping interval, so every minute is worth it: a minute of
+lateness is invisible, five is not. Nothing in the route cares how often it runs —
+`reminderFired` makes each reminder send once at any frequency, and the 48-hour
+stale window is untouched by the interval. Once a minute is about 44k invocations a
+month against the 1M Vercel Hobby includes.
 
 ## Verify
 
