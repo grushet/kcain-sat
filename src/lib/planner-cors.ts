@@ -41,7 +41,7 @@ export function plannerPreflight(req: Request) {
   const origin = plannerOrigin(req);
   if (!origin) return new NextResponse(null, { status: 403 });
   const res = withCors(new NextResponse(null, { status: 204 }), origin);
-  res.headers.set("Access-Control-Allow-Methods", "GET, PUT, OPTIONS");
+  res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.headers.set("Access-Control-Allow-Headers", "Content-Type");
   res.headers.set("Access-Control-Max-Age", "86400");
   return res;

@@ -35,6 +35,7 @@ model User {
   practiceSessions PracticeSession[]
   plannerTasks     PlannerTask[]
   plannerSettings  PlannerSettings?
+  pushSubscriptions PlannerPushSubscription[]
 }
 
 model Account {
@@ -458,6 +459,36 @@ model PlannerSubtask {
   task PlannerTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId, sortOrder])
+}
+
+// A browser push endpoint the student granted, so a reminder can reach them
+// with the tab shut. The client-side checkReminders() only runs while the
+// planner is open; this is how a reminder fires otherwise.
+//
+// One row per browser/profile. `timeZone` is that device's IANA zone, reported
+// at subscribe time: the cron compares it against a reminder's wall-clock
+// string ("2026-09-01T09:00") to decide whether nine in the morning has
+// arrived for this student. Storing it here rather than on PlannerSettings
+// keeps each device self-describing and avoids a settings migration.
+model PlannerPushSubscription {
+  id       String @id @default(cuid())
+  userId   String
+  /// The push service URL. Unique so a re-subscribe from the same browser
+  /// updates the row instead of piling up duplicates.
+  endpoint String @unique
+  /// The subscription's public key and auth secret, base64url, straight from
+  /// PushSubscription.toJSON().keys.
+  p256dh   String
+  auth     String
+  /// IANA name, e.g. "America/Toronto". Null falls back to the app default.
+  timeZone String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // One row per user: view preferences plus the pomodoro timer.

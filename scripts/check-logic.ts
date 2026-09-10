@@ -33,6 +33,7 @@ import {
   studyDaysBetween,
 } from "../src/lib/xp";
 import { normaliseTasks, MAX_TEXT } from "../src/lib/planner-normalise";
+import { reminderStatus, wallClockInZone, isValidTimeZone } from "../src/lib/planner-reminders";
 import { safeCallbackUrl, DEFAULT_AFTER_LOGIN } from "../src/lib/login-redirect";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_DOMAIN } from "../src/lib/session-cookie";
 import { readFileSync, readdirSync } from "node:fs";
@@ -234,6 +235,33 @@ eq("completed is coerced to a real boolean", normaliseTasks([{ ...okTask, comple
 eq("subtasks are normalised too", normaliseTasks([{ ...okTask, subtasks: [{ id: "s1", text: "part" }, { text: "no id" }] }])[0].subtasks.map((s) => s.id), ["s1"]);
 eq("a non-array subtasks field does not throw", normaliseTasks([{ ...okTask, subtasks: "nope" }])[0].subtasks, []);
 eq("a null entry in the list is skipped", normaliseTasks([null, okTask]).length, 1);
+
+// ---- planner reminders ---------------------------------------------------
+// The reminder cron reads "now" through the student's IANA zone and compares
+// wall-clock strings, so a reminder never fires on the wrong day for anyone
+// behind UTC and never needs offset or DST arithmetic.
+console.log("");
+console.log("── planner reminders ───────────────────────────────────────────");
+
+const noonUTC = new Date("2026-09-01T16:00:00Z"); // 12:00 in Toronto (EDT)
+eq(
+  "now is read on the student's wall clock",
+  wallClockInZone(noonUTC, "America/Toronto"),
+  "2026-09-01T12:00"
+);
+eq("a reminder later today has not arrived", reminderStatus("2026-09-01T14:00", "America/Toronto", noonUTC), "pending");
+eq("a reminder for this minute is due", reminderStatus("2026-09-01T12:00", "America/Toronto", noonUTC), "due");
+eq("a reminder a few minutes past is still due", reminderStatus("2026-09-01T11:55", "America/Toronto", noonUTC), "due");
+eq("a reminder days overdue is retired, not fired", reminderStatus("2026-08-29T09:00", "America/Toronto", noonUTC), "stale");
+
+// 21:30 on Sept 1 in Toronto, but already Sept 2 in UTC. The day must not shift.
+const lateEveningTO = new Date("2026-09-02T01:30:00Z");
+eq("an evening reminder fires that evening, not a day early", reminderStatus("2026-09-01T21:00", "America/Toronto", lateEveningTO), "due");
+eq("a reminder later that evening still waits", reminderStatus("2026-09-01T22:00", "America/Toronto", lateEveningTO), "pending");
+
+eq("an unusable time zone is rejected", isValidTimeZone("Not/AZone"), false);
+eq("an unknown zone falls back instead of throwing", reminderStatus("2026-09-01T14:00", "Not/AZone", noonUTC), "pending");
+eq("a garbled reminder string retires quietly", reminderStatus("next tuesday", "America/Toronto", noonUTC), "stale");
 
 // ---- signing back in ------------------------------------------------------
 // Both of these guard the outage where every signed-in student was bounced
