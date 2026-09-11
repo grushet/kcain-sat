@@ -3,7 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { currentUserId } from "@/lib/api-auth";
 import { QUESTION_SELECT, rowToClientQuestion, type ClientQuestion } from "@/lib/question-store";
 import { writeModuleAnswerLog } from "@/lib/attempt-service";
-import { MODULE_META, countCorrect, isModuleKey } from "@/lib/test-attempt";
+import {
+  MODULE_META,
+  countCorrect,
+  isModuleKey,
+  isPhase,
+  shouldAcceptModuleWrite,
+  clampDurationSeconds,
+} from "@/lib/test-attempt";
 import { grantXP } from "@/lib/xp-service";
 import { XP, XP_SOURCE } from "@/lib/xp";
 
@@ -83,8 +90,16 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 
   const existing = await prisma.testModule.findUnique({
     where: { attemptId_key: { attemptId: attempt.id, key } },
-    select: { id: true, questionIds: true, status: true },
+    select: { id: true, questionIds: true, status: true, rawScore: true },
   });
+
+  const incomingStatus = body.status === "completed" ? "completed" : "in_progress";
+  if (
+    existing &&
+    !shouldAcceptModuleWrite(existing.status === "completed" ? "completed" : "in_progress", incomingStatus)
+  ) {
+    return NextResponse.json({ ok: true, ignored: true, rawScore: existing.rawScore, xpEarned: 0 });
+  }
 
   let questionIds: string[];
   if (existing) {
@@ -107,7 +122,7 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 
   const answers = readAnswers(body.answers, questionIds.length);
   const times = readTimes(body.times, questionIds.length);
-  const completed = body.status === "completed";
+  const completed = incomingStatus === "completed";
   const currentIndex = Number.isInteger(body.currentIndex)
     ? Math.min(Math.max(body.currentIndex as number, 0), Math.max(questionIds.length - 1, 0))
     : 0;
@@ -115,10 +130,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     typeof body.secondsLeft === "number" && Number.isFinite(body.secondsLeft)
       ? Math.max(0, Math.round(body.secondsLeft))
       : null;
-  const durationSeconds =
-    typeof body.durationSeconds === "number" && body.durationSeconds > 0
-      ? Math.round(body.durationSeconds)
-      : MODULE_META[key].seconds;
+  const durationSeconds = clampDurationSeconds(body.durationSeconds, MODULE_META[key].seconds);
+  const phase = isPhase(body.phase) ? body.phase : null;
 
   // The score is worked out from the stored questions, never taken from the
   // page, so a tampered request cannot invent a 1600.
@@ -173,6 +186,13 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     },
     select: { id: true, rawScore: true },
   });
+
+  // Lets the client send the next phase together with the module write instead
+  // of a separate, unawaited PATCH that can land after (or never) and leave
+  // the stored phase pointing at a module that has already moved on.
+  if (phase) {
+    await prisma.testAttempt.update({ where: { id: attempt.id }, data: { phase } });
+  }
 
   let xpEarned = 0;
   if (completed) {

@@ -129,7 +129,7 @@ export default function PracticeReviewPage() {
           <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Score</p>
           <p className="text-3xl font-display font-bold text-sat-primary">
             {session.correct}
-            <span className="text-lg text-sat-gray-400">/{session.answered}</span>
+            <span className="text-lg text-sat-gray-500">/{session.answered}</span>
           </p>
         </div>
         <div>

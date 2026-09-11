@@ -4,14 +4,19 @@ import { useState } from "react";
 import { Calculator as CalcIcon, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function Calculator() {
+interface CalculatorProps {
+  /** Overrides the floating button's fixed position, e.g. to clear other bottom-anchored UI. */
+  positionClassName?: string;
+}
+
+export function Calculator({ positionClassName = "bottom-6 right-6" }: CalculatorProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <motion.button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-2xl bg-gradient-to-br from-sat-primary to-sat-crimson dark:from-sky-500 dark:to-sky-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+        className={`fixed ${positionClassName} z-40 w-14 h-14 rounded-2xl bg-gradient-to-br from-sat-primary to-sat-crimson dark:from-sky-500 dark:to-sky-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform`}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         title="Open Calculator"

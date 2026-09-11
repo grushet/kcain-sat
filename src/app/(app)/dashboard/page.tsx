@@ -12,8 +12,8 @@ import { DAILY_GOAL_XP, levelFromXP, type LevelInfo } from "@/lib/xp";
 
 const SAT_TIPS = [
   "Plug answer choices back in when the algebra gets messy; it is often faster than solving.",
-  "For paired evidence questions, answer the main question first, then find the line that proves it.",
-  "'NO CHANGE' is correct about 25% of the time. Don't overthink it.",
+  "For Command of Evidence questions, restate the claim in your own words first, then find the finding that proves it.",
+  "The Digital SAT has no 'NO CHANGE' option. If several choices are grammatically correct, pick the shortest.",
   "Memorize the 3-4-5 and 5-12-13 right triangles; they appear often.",
   "When stuck on vocab, cover the word and predict what would fit in the blank.",
   "Use your calculator for the Math section; it's allowed and can save time.",
@@ -179,7 +179,7 @@ export default function DashboardPage() {
                   </p>
                   <p className="font-display font-bold text-2xl text-sat-gray-900 dark:text-white leading-tight">
                     {lastTest.totalScaled}
-                    <span className="text-base font-normal text-sat-gray-400"> / 1600</span>
+                    <span className="text-base font-normal text-sat-gray-500"> / 1600</span>
                   </p>
                   <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400">
                     R&amp;W {lastTest.rwScaled} · Math {lastTest.mathScaled}
@@ -195,7 +195,7 @@ export default function DashboardPage() {
         ) : (
           <div className="card p-5 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-sat-gray-100 dark:bg-sat-gray-700 flex items-center justify-center shrink-0">
-              <FileQuestion className="w-5 h-5 text-sat-gray-400" />
+              <FileQuestion className="w-5 h-5 text-sat-gray-500" />
             </div>
             <div className="min-w-0">
               <p className="font-display font-semibold text-sat-gray-900 dark:text-white">

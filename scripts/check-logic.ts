@@ -18,7 +18,18 @@ import {
   serialiseCorrectAnswers,
   rowToClientQuestion,
 } from "../src/lib/question-store";
-import { isCorrect, countCorrect, resumablePhase, MODULE_META } from "../src/lib/test-attempt";
+import {
+  isCorrect,
+  countCorrect,
+  resumeScreen,
+  shouldAcceptModuleWrite,
+  clampDurationSeconds,
+  isTimeMultiplier,
+  MODULE_META,
+  type AttemptModulePayload,
+  type ModuleKey,
+} from "../src/lib/test-attempt";
+import { estimateSectionRange, estimateSectionScore } from "../src/lib/scoring";
 import {
   XP,
   DAILY_GOAL_XP,
@@ -119,15 +130,217 @@ eq("options keep their stored order", mcqQuestion.answerOptions?.map((o) => o.ke
 // ── Resuming a test ───────────────────────────────────────────────────────
 section("resume");
 
-eq("a tab that died fetching R&W 2 lands on the break", resumablePhase("rw2_loading"), "rw1_done");
-eq("same for math 2", resumablePhase("math2_loading"), "math1_done");
-eq("a test that never started goes back to the intro", resumablePhase("loading"), "intro");
-eq("a live module resumes into itself", resumablePhase("rw1"), "rw1");
+function mod(key: ModuleKey, over: Partial<AttemptModulePayload> = {}): AttemptModulePayload {
+  return {
+    key,
+    harder: false,
+    questions: [],
+    answers: [],
+    times: [],
+    currentIndex: 0,
+    secondsLeft: null,
+    durationSeconds: MODULE_META[key].seconds,
+    status: "in_progress",
+    rawScore: null,
+    ...over,
+  };
+}
+const oneQ = [{ correctAnswer: ["A"] }] as unknown as AttemptModulePayload["questions"];
+
+eq("no modules at all goes to the intro", resumeScreen([], "loading"), "intro");
+eq(
+  "rw1 registered but no questions yet goes to the intro",
+  resumeScreen([mod("rw1", { questions: [] })], "loading"),
+  "intro"
+);
+eq(
+  "rw1 has questions and is not completed resumes into rw1",
+  resumeScreen([mod("rw1", { questions: oneQ })], "rw1"),
+  "rw1"
+);
+
+// The bug: finishModule stored the "completed" rw1 write, then the phase PATCH
+// that should have followed it never landed (or lost the race). The stored
+// phase is still "rw1", but the module itself is done, so resuming must not
+// trust the stale phase and send the student back into a finished module.
+eq(
+  "rw1 completed with a stale 'rw1' phase and no rw2 yet lands on the break",
+  resumeScreen([mod("rw1", { questions: oneQ, status: "completed" })], "rw1"),
+  "rw1_done"
+);
+
+eq(
+  "rw2 has questions and is not completed resumes into rw2",
+  resumeScreen(
+    [mod("rw1", { questions: oneQ, status: "completed" }), mod("rw2", { questions: oneQ })],
+    "rw2"
+  ),
+  "rw2"
+);
+eq(
+  "rw2 completed with a stale 'rw2' phase and no math1 progress goes to math_intro",
+  resumeScreen(
+    [
+      mod("rw1", { questions: oneQ, status: "completed" }),
+      mod("rw2", { questions: oneQ, status: "completed" }),
+      mod("math1", { questions: oneQ }),
+    ],
+    "rw2"
+  ),
+  "math_intro"
+);
+
+// math1 is registered, in_progress, with its questions the instant the test
+// starts, so "in_progress with questions" alone must not read as "the student
+// is inside math1" -- otherwise every rw1/rw2 sitting would resume into math1.
+eq(
+  "math1 registered but never entered resumes to math_intro, not math1",
+  resumeScreen(
+    [
+      mod("rw1", { questions: oneQ, status: "completed" }),
+      mod("rw2", { questions: oneQ, status: "completed" }),
+      mod("math1", { questions: oneQ, currentIndex: 0, secondsLeft: null, answers: [null] }),
+    ],
+    "rw2"
+  ),
+  "math_intro"
+);
+eq(
+  "math1 with an answered question resumes into math1",
+  resumeScreen(
+    [
+      mod("rw1", { questions: oneQ, status: "completed" }),
+      mod("rw2", { questions: oneQ, status: "completed" }),
+      mod("math1", { questions: oneQ, answers: ["A"] }),
+    ],
+    "math_intro"
+  ),
+  "math1"
+);
+eq(
+  "math1 with a clock that has ticked down resumes into math1",
+  resumeScreen(
+    [
+      mod("rw1", { questions: oneQ, status: "completed" }),
+      mod("rw2", { questions: oneQ, status: "completed" }),
+      mod("math1", { questions: oneQ, secondsLeft: 100, durationSeconds: MODULE_META.math1.seconds }),
+    ],
+    "math_intro"
+  ),
+  "math1"
+);
+eq(
+  "math1 completed with no math2 yet lands on the math1 break",
+  resumeScreen(
+    [
+      mod("rw1", { questions: oneQ, status: "completed" }),
+      mod("rw2", { questions: oneQ, status: "completed" }),
+      mod("math1", { questions: oneQ, status: "completed" }),
+    ],
+    "math1"
+  ),
+  "math1_done"
+);
+eq(
+  "math2 has questions and is not completed resumes into math2",
+  resumeScreen(
+    [
+      mod("rw1", { questions: oneQ, status: "completed" }),
+      mod("rw2", { questions: oneQ, status: "completed" }),
+      mod("math1", { questions: oneQ, status: "completed" }),
+      mod("math2", { questions: oneQ }),
+    ],
+    "math2"
+  ),
+  "math2"
+);
+eq(
+  "all four modules completed goes to results",
+  resumeScreen(
+    (["rw1", "rw2", "math1", "math2"] as const).map((k) =>
+      mod(k, { questions: oneQ, status: "completed" })
+    ),
+    "math2"
+  ),
+  "results"
+);
+
 eq(
   "modules are ordered as they are taken",
   (["rw1", "rw2", "math1", "math2"] as const).map((k) => MODULE_META[k].order),
   [0, 1, 2, 3]
 );
+
+// ── Stale autosaves to a finished module ───────────────────────────────────
+section("module writes");
+
+eq("a fresh module accepts its first write", shouldAcceptModuleWrite(undefined, "in_progress"), true);
+eq("an in-progress module accepts an autosave", shouldAcceptModuleWrite("in_progress", "in_progress"), true);
+eq("an in-progress module accepts its completion", shouldAcceptModuleWrite("in_progress", "completed"), true);
+eq(
+  "a late autosave after completion is refused",
+  shouldAcceptModuleWrite("completed", "in_progress"),
+  false
+);
+eq(
+  "a repeated completed write is still accepted (idempotent)",
+  shouldAcceptModuleWrite("completed", "completed"),
+  true
+);
+
+eq("a valid extended duration is kept", clampDurationSeconds(2400, 1920), 2400);
+eq("the base duration is always valid", clampDurationSeconds(1920, 1920), 1920);
+eq("exactly double the base is the top of the range", clampDurationSeconds(3840, 1920), 3840);
+eq("over double the base falls back to the base", clampDurationSeconds(3841, 1920), 1920);
+eq("under the base falls back to the base", clampDurationSeconds(1000, 1920), 1920);
+eq("a non-number falls back to the base", clampDurationSeconds("1920", 1920), 1920);
+eq("NaN falls back to the base", clampDurationSeconds(NaN, 1920), 1920);
+eq("a fractional value rounds before the range check", clampDurationSeconds(2879.6, 1920), 2880);
+
+eq("standard time is allowed", isTimeMultiplier(1), true);
+eq("time and a half is allowed", isTimeMultiplier(1.5), true);
+eq("double time is allowed", isTimeMultiplier(2), true);
+eq("triple time is not an offered option", isTimeMultiplier(3), false);
+eq("a string is never a valid multiplier", isTimeMultiplier("2"), false);
+
+// ── Score estimate ──────────────────────────────────────────────────────────
+section("scoring");
+
+eq("zero raw score is the floor of the table", estimateSectionRange(0, 66, "reading_writing"), {
+  lower: 200,
+  upper: 200,
+});
+eq("a full R&W raw score reaches the top of the table", estimateSectionRange(66, 66, "reading_writing").upper, 800);
+eq("a full Math raw score reaches the top of the table", estimateSectionRange(54, 54, "math").upper, 800);
+eq("an invalid max returns the floor", estimateSectionRange(5, 0, "math"), { lower: 200, upper: 200 });
+eq("a NaN raw score returns the floor", estimateSectionRange(NaN, 54, "math"), { lower: 200, upper: 200 });
+
+let rangesOk = true;
+for (const sec of ["reading_writing", "math"] as const) {
+  const max = sec === "reading_writing" ? 66 : 54;
+  let prevLower = -Infinity;
+  let prevUpper = -Infinity;
+  for (let raw = 0; raw <= max; raw++) {
+    const { lower, upper } = estimateSectionRange(raw, max, sec);
+    if (lower > upper) rangesOk = false;
+    if (lower < prevLower || upper < prevUpper) rangesOk = false;
+    if (lower < 200 || lower > 800 || upper < 200 || upper > 800) rangesOk = false;
+    prevLower = lower;
+    prevUpper = upper;
+  }
+}
+eq("every raw score gives a non-decreasing, lower<=upper, in-range band", rangesOk, true);
+
+let midpointsOk = true;
+for (const sec of ["reading_writing", "math"] as const) {
+  const max = sec === "reading_writing" ? 66 : 54;
+  for (let raw = 0; raw <= max; raw++) {
+    const mid = estimateSectionScore(raw, max, sec);
+    if (mid < 200 || mid > 800) midpointsOk = false;
+  }
+}
+eq("the midpoint score always stays within 200-800", midpointsOk, true);
+eq("0 raw gives a 200 midpoint", estimateSectionScore(0, 66, "reading_writing"), 200);
 
 // ── Levels ────────────────────────────────────────────────────────────────
 section("levels");

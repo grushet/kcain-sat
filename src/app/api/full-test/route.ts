@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { upsertQuestions, type BankQuestionInput } from "@/lib/question-store";
 import { currentUserId } from "@/lib/api-auth";
 
+// Vercel Hobby with Fluid compute caps a function at 300s. Up to 5 waves of a
+// 30s list fetch plus a 20s per-item fetch fit comfortably inside 120s.
+export const maxDuration = 120;
+
 const CB_LIST =
   "https://qbank-api.collegeboard.org/msreportingquestionbank-prod/questionbank/digital/get-questions";
 const CB_QUESTION =

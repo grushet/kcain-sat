@@ -1,3 +1,5 @@
+const { withSentryConfig } = require("@sentry/nextjs/config");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -26,4 +28,11 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+// Source-map upload is skipped automatically when SENTRY_AUTH_TOKEN is unset
+// (silent: true just keeps that skip quiet), so the build stays green with no
+// Sentry env vars configured at all.
+module.exports = withSentryConfig(nextConfig, {
+  silent: true,
+  widenClientFileUpload: false,
+  webpack: { treeshake: { removeDebugLogging: true } },
+});

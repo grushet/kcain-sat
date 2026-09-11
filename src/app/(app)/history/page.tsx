@@ -193,14 +193,14 @@ export default function HistoryPage() {
             <div className="card p-5">
               <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Best score</p>
               <p className="text-3xl font-display font-bold text-sat-primary">{best}</p>
-              <p className="text-xs text-sat-gray-400 mt-1">out of 1600</p>
+              <p className="text-xs text-sat-gray-500 mt-1">out of 1600</p>
             </div>
             <div className="card p-5">
               <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Tests taken</p>
               <p className="text-3xl font-display font-bold text-sat-gray-900 dark:text-white">
                 {completed.length}
               </p>
-              <p className="text-xs text-sat-gray-400 mt-1">
+              <p className="text-xs text-sat-gray-500 mt-1">
                 {practice.length} practice {practice.length === 1 ? "run" : "runs"}
               </p>
             </div>
@@ -234,7 +234,7 @@ export default function HistoryPage() {
                   <div className="min-w-0 flex-1">
                     <p className="font-display font-bold text-lg text-sat-gray-900 dark:text-white leading-tight">
                       {a.totalScaled}
-                      <span className="text-sm font-normal text-sat-gray-400"> / 1600</span>
+                      <span className="text-sm font-normal text-sat-gray-500"> / 1600</span>
                     </p>
                     <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400">
                       {formatDate(a.completedAt ?? a.startedAt)}
@@ -250,7 +250,7 @@ export default function HistoryPage() {
                       {a.mathMax ? ` · ${a.mathRaw}/${a.mathMax}` : ""}
                     </span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-sat-gray-400 flex-shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-sat-gray-500 flex-shrink-0" />
                 </div>
               </Link>
             ))}
@@ -316,7 +316,7 @@ export default function HistoryPage() {
                   <span className="text-sm font-semibold text-sat-gray-700 dark:text-sat-gray-200 tabular-nums whitespace-nowrap">
                     {p.correct}/{p.answered}
                   </span>
-                  <ChevronRight className="w-5 h-5 text-sat-gray-400 flex-shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-sat-gray-500 flex-shrink-0" />
                 </div>
               </Link>
             ))}

@@ -18,15 +18,19 @@ import {
   CloudOff,
   Play,
 } from "lucide-react";
-import { estimateSectionScore } from "@/lib/scoring";
+import { estimateSectionScore, estimateSectionRange } from "@/lib/scoring";
+import { Calculator as DesmosCalculator } from "@/components/Calculator";
 import type { ClientQuestion } from "@/lib/question-store";
 import {
   MODULE_META,
-  MODULE_SECONDS,
+  TIME_MULTIPLIERS,
   countCorrect,
+  resumeScreen,
+  isTimeMultiplier,
   type AttemptPayload,
   type ModuleKey,
   type Phase,
+  type TimeMultiplier,
 } from "@/lib/test-attempt";
 import {
   QuestionReview,
@@ -60,6 +64,11 @@ const PHASE_TO_MODULE: Partial<Record<Phase, ModuleKey>> = {
   math1: "math1",
   math2: "math2",
 };
+
+/** A module's clock, adjusted for the student's chosen extended-time setting. */
+function moduleDurationSeconds(key: ModuleKey, multiplier: TimeMultiplier): number {
+  return Math.round(MODULE_META[key].seconds * multiplier);
+}
 
 function calcScore(mod: CompletedModule): number {
   return countCorrect(mod.questions, mod.answers);
@@ -208,6 +217,36 @@ export default function FullTestPage() {
 
   const [resumable, setResumable] = useState<AttemptPayload | null>(null);
   const [checkingResume, setCheckingResume] = useState(true);
+
+  // Extended time, read from and written to the student's account settings.
+  const [timeMultiplier, setTimeMultiplier] = useState<TimeMultiplier>(1);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && isTimeMultiplier(d?.timeMultiplier)) setTimeMultiplier(d.timeMultiplier);
+      })
+      .catch(() => {
+        // Standard time is the safe default if this fails to load.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleTimeMultiplierChange(value: TimeMultiplier) {
+    setTimeMultiplier(value);
+    try {
+      await fetch("/api/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timeMultiplier: value }),
+      });
+    } catch {
+      // The chosen value still applies to this sitting even if the save failed.
+    }
+  }
   const [completedAttempt, setCompletedAttempt] = useState<AttemptPayload | null>(null);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
   /** XP paid for the module just handed in, shown on the break screen. */
@@ -279,7 +318,9 @@ export default function FullTestPage() {
   }
 
   const persistModule = useCallback(
-    async (over: Partial<LiveModule> & { status?: "in_progress" | "completed" } = {}) => {
+    async (
+      over: Partial<LiveModule> & { status?: "in_progress" | "completed"; phase?: Phase } = {}
+    ) => {
       const id = attemptIdRef.current;
       const live = { ...liveRef.current, ...over };
       if (!id || !live.key || live.questions.length === 0) return false;
@@ -292,14 +333,15 @@ export default function FullTestPage() {
         times: live.times,
         currentIndex: live.currentIdx,
         secondsLeft: live.secondsLeft,
-        durationSeconds: MODULE_META[live.key].seconds,
+        durationSeconds: moduleDurationSeconds(live.key, timeMultiplier),
         status: over.status ?? "in_progress",
+        ...(over.phase ? { phase: over.phase } : {}),
       });
       setSaveWarning(ok ? null : SAVE_WARNING);
       if (xpEarned > 0) setModuleXp(xpEarned);
       return ok;
     },
-    []
+    [timeMultiplier]
   );
 
   // A heartbeat so the clock and any half-finished question survive a crash even
@@ -338,7 +380,11 @@ export default function FullTestPage() {
     const math1 = byKey.get("math1");
     setMath1Qs(math1?.questions ?? []);
 
-    const key = PHASE_TO_MODULE[a.phase];
+    // The stored phase can lag the module state (see resumeScreen), so the
+    // screen to resume into is derived from the modules themselves rather
+    // than trusted directly off the attempt.
+    const derivedPhase = resumeScreen(a.modules, a.phase);
+    const key = PHASE_TO_MODULE[derivedPhase];
     const live = key ? byKey.get(key) : undefined;
     if (key && live && live.status === "in_progress" && live.questions.length > 0) {
       setActiveQs(live.questions);
@@ -348,7 +394,7 @@ export default function FullTestPage() {
       setPendingAns(live.answers[live.currentIndex] ?? null);
       setSecondsLeft(live.secondsLeft ?? live.durationSeconds);
       setActiveHarder(live.harder);
-      setPhase(a.phase);
+      setPhase(derivedPhase);
       return;
     }
 
@@ -359,7 +405,7 @@ export default function FullTestPage() {
       setPhase(key === "rw2" ? "rw1_done" : key === "math2" ? "math1_done" : "math_intro");
       return;
     }
-    setPhase(a.phase);
+    setPhase(derivedPhase);
   }, []);
 
   // Ask once on load whether there is a test to pick back up.
@@ -460,8 +506,8 @@ export default function FullTestPage() {
             answers: new Array(rw1.length).fill(null),
             times: new Array(rw1.length).fill(null),
             currentIndex: 0,
-            secondsLeft: MODULE_SECONDS.rw,
-            durationSeconds: MODULE_SECONDS.rw,
+            secondsLeft: moduleDurationSeconds("rw1", timeMultiplier),
+            durationSeconds: moduleDurationSeconds("rw1", timeMultiplier),
             status: "in_progress",
           }),
           saveModuleState(id, {
@@ -471,8 +517,8 @@ export default function FullTestPage() {
             answers: new Array(math1.length).fill(null),
             times: new Array(math1.length).fill(null),
             currentIndex: 0,
-            secondsLeft: MODULE_SECONDS.math,
-            durationSeconds: MODULE_SECONDS.math,
+            secondsLeft: moduleDurationSeconds("math1", timeMultiplier),
+            durationSeconds: moduleDurationSeconds("math1", timeMultiplier),
             status: "in_progress",
           }),
         ]);
@@ -480,7 +526,7 @@ export default function FullTestPage() {
         void savePhase(id, "rw1");
       }
 
-      startModule(rw1, MODULE_SECONDS.rw, false);
+      startModule(rw1, moduleDurationSeconds("rw1", timeMultiplier), false);
       setPhase("rw1");
     } catch (e) {
       setLoadError((e as Error).message);
@@ -525,32 +571,38 @@ export default function FullTestPage() {
   ) {
     const done: CompletedModule = { questions: activeQs, answers: finalAnswers };
     const endingPhase = phase;
+    const nextPhase: Phase | undefined =
+      endingPhase === "rw1"
+        ? "rw1_done"
+        : endingPhase === "rw2"
+        ? "math_intro"
+        : endingPhase === "math1"
+        ? "math1_done"
+        : undefined;
     setSecondsLeft(null);
     finishing.current = true;
 
     // Waiting on this one save is deliberate: a module is only really finished
-    // once it is stored, and everything after this point depends on that.
+    // once it is stored, and everything after this point depends on that. The
+    // next phase rides along in the same request (rather than a separate,
+    // unawaited PATCH) so the stored phase cannot lag the "completed" write.
     await persistModule({
       answers: finalAnswers,
       times: finalTimes,
       secondsLeft: 0,
       status: "completed",
+      phase: nextPhase,
     });
-
-    const id = attemptIdRef.current;
 
     if (endingPhase === "rw1") {
       setRw1Done(done);
       setPhase("rw1_done");
-      if (id) void savePhase(id, "rw1_done");
     } else if (endingPhase === "rw2") {
       setRw2Done(done);
       setPhase("math_intro");
-      if (id) void savePhase(id, "math_intro");
     } else if (endingPhase === "math1") {
       setMath1Done(done);
       setPhase("math1_done");
-      if (id) void savePhase(id, "math1_done");
     } else if (endingPhase === "math2") {
       await finishMath2(done);
     }
@@ -582,14 +634,14 @@ export default function FullTestPage() {
           answers: new Array(rw2.length).fill(null),
           times: new Array(rw2.length).fill(null),
           currentIndex: 0,
-          secondsLeft: MODULE_SECONDS.rw,
-          durationSeconds: MODULE_SECONDS.rw,
+          secondsLeft: moduleDurationSeconds("rw2", timeMultiplier),
+          durationSeconds: moduleDurationSeconds("rw2", timeMultiplier),
           status: "in_progress",
         });
         if (!ok) setSaveWarning(SAVE_WARNING);
         void savePhase(id, "rw2");
       }
-      startModule(rw2, MODULE_SECONDS.rw, harder);
+      startModule(rw2, moduleDurationSeconds("rw2", timeMultiplier), harder);
       setPhase("rw2");
     } catch (e) {
       setLoadError((e as Error).message);
@@ -598,7 +650,7 @@ export default function FullTestPage() {
   }
 
   function handleStartMath1() {
-    startModule(math1Qs, MODULE_SECONDS.math, false);
+    startModule(math1Qs, moduleDurationSeconds("math1", timeMultiplier), false);
     setPhase("math1");
     const id = attemptIdRef.current;
     if (id) void savePhase(id, "math1");
@@ -622,14 +674,14 @@ export default function FullTestPage() {
           answers: new Array(math2.length).fill(null),
           times: new Array(math2.length).fill(null),
           currentIndex: 0,
-          secondsLeft: MODULE_SECONDS.math,
-          durationSeconds: MODULE_SECONDS.math,
+          secondsLeft: moduleDurationSeconds("math2", timeMultiplier),
+          durationSeconds: moduleDurationSeconds("math2", timeMultiplier),
           status: "in_progress",
         });
         if (!ok) setSaveWarning(SAVE_WARNING);
         void savePhase(id, "math2");
       }
-      startModule(math2, MODULE_SECONDS.math, harder);
+      startModule(math2, moduleDurationSeconds("math2", timeMultiplier), harder);
       setPhase("math2");
     } catch (e) {
       setLoadError((e as Error).message);
@@ -749,7 +801,7 @@ export default function FullTestPage() {
           Full-Length Practice Test
         </h1>
         <p className="text-sat-gray-600 dark:text-sat-gray-400 mb-8">
-          98 real SAT questions pulled live from Collegeboard, randomized every time.
+          98 questions from College Board&apos;s public Educator Question Bank, randomized every time.
         </p>
 
         {loadError && (
@@ -824,6 +876,28 @@ export default function FullTestPage() {
             <li>• Every score and every question is kept in your history</li>
           </ul>
 
+          <div>
+            <label className="block text-sm font-medium text-sat-gray-700 dark:text-sat-gray-300 mb-2">
+              Timing
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {TIME_MULTIPLIERS.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => void handleTimeMultiplierChange(m)}
+                  className={`text-sm py-2 px-4 rounded-xl border-2 transition-colors ${
+                    timeMultiplier === m
+                      ? "border-sat-primary bg-sat-primary/10 text-sat-primary font-semibold"
+                      : "border-sat-gray-200 dark:border-sat-gray-600 text-sat-gray-600 dark:text-sat-gray-400"
+                  }`}
+                >
+                  {m === 1 ? "Standard" : m === 1.5 ? "Time and a half" : "Double time"}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <motion.button
             type="button"
             onClick={handleStartTest}
@@ -868,8 +942,8 @@ export default function FullTestPage() {
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-5 text-center">
         <Loader2 className="w-12 h-12 text-sat-primary animate-spin" />
         <p className="text-sat-gray-700 dark:text-sat-gray-300 font-medium">{msg}</p>
-        <p className="text-xs text-sat-gray-400 dark:text-sat-gray-500 max-w-xs">
-          Fetching real questions from Collegeboard. This takes a moment.
+        <p className="text-xs text-sat-gray-500 dark:text-sat-gray-500 max-w-xs">
+          Fetching official practice questions from College Board. This takes a moment.
         </p>
       </div>
     );
@@ -882,6 +956,9 @@ export default function FullTestPage() {
     return (
       <div className="max-w-3xl mx-auto">
         {saveBanner}
+        {isMathModule && (
+          <DesmosCalculator positionClassName="bottom-24 right-4 sm:bottom-6 sm:right-6" />
+        )}
 
         {/* Module header */}
         <div className="mb-5">
@@ -969,7 +1046,7 @@ export default function FullTestPage() {
                           className={`w-7 h-7 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs font-bold transition-colors ${
                             isSelected
                               ? "border-sat-primary text-sat-primary"
-                              : "border-sat-gray-400 text-sat-gray-400"
+                              : "border-sat-gray-400 text-sat-gray-500"
                           }`}
                         >
                           {opt.key}
@@ -1023,6 +1100,12 @@ export default function FullTestPage() {
                   </motion.button>
                 )}
               </div>
+
+              {!currentQ.externalId.startsWith("bank:") && (
+                <p className="text-xs text-sat-gray-500 dark:text-sat-gray-500 mt-4">
+                  Question © College Board
+                </p>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>
@@ -1056,7 +1139,7 @@ export default function FullTestPage() {
           </div>
           <p className="text-5xl font-display font-bold text-sat-primary">
             {score}
-            <span className="text-2xl text-sat-gray-400">/{rw1Done.questions.length}</span>
+            <span className="text-2xl text-sat-gray-500">/{rw1Done.questions.length}</span>
           </p>
           {moduleXpPill}
           <p className="text-sm text-sat-gray-600 dark:text-sat-gray-400">
@@ -1142,7 +1225,7 @@ export default function FullTestPage() {
           </div>
           <p className="text-5xl font-display font-bold text-sat-primary">
             {score}
-            <span className="text-2xl text-sat-gray-400">/{math1Done.questions.length}</span>
+            <span className="text-2xl text-sat-gray-500">/{math1Done.questions.length}</span>
           </p>
           {moduleXpPill}
           <p className="text-sm text-sat-gray-600 dark:text-sat-gray-400">
@@ -1172,13 +1255,9 @@ export default function FullTestPage() {
     const rwTotal = rw1Done.questions.length + rw2Done.questions.length;
     const mathTotal = math1Done.questions.length + math2Done.questions.length;
 
-    // The server scores the stored answers; the local numbers are the fallback
-    // for the moment before that response lands, or if it never does.
-    const rwScaled =
-      completedAttempt?.rwScaled ?? estimateSectionScore(rwRaw, rwTotal, "reading_writing");
-    const mathScaled =
-      completedAttempt?.mathScaled ?? estimateSectionScore(mathRaw, mathTotal, "math");
-    const total = completedAttempt?.totalScaled ?? rwScaled + mathScaled;
+    const rwRange = estimateSectionRange(rwRaw, rwTotal, "reading_writing");
+    const mathRange = estimateSectionRange(mathRaw, mathTotal, "math");
+    const totalRange = { lower: rwRange.lower + mathRange.lower, upper: rwRange.upper + mathRange.upper };
 
     const groups: ReviewGroup[] = (
       [
@@ -1208,29 +1287,35 @@ export default function FullTestPage() {
         </div>
 
         {/* Score cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
           <div className="card p-5 text-center">
             <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">
               Reading &amp; Writing
             </p>
             <p className="text-3xl font-display font-bold text-sky-600 dark:text-sky-400">
-              {rwScaled}
+              {rwRange.lower}–{rwRange.upper}
             </p>
-            <p className="text-xs text-sat-gray-400 mt-1">{rwRaw}/{rwTotal} correct</p>
+            <p className="text-xs text-sat-gray-500 mt-1">{rwRaw}/{rwTotal} correct</p>
           </div>
           <div className="card p-5 text-center ring-2 ring-sat-primary">
             <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Total Score</p>
-            <p className="text-3xl font-display font-bold text-sat-primary">{total}</p>
-            <p className="text-xs text-sat-gray-400 mt-1">out of 1600</p>
+            <p className="text-3xl font-display font-bold text-sat-primary">
+              {totalRange.lower}–{totalRange.upper}
+            </p>
+            <p className="text-xs text-sat-gray-500 mt-1">out of 1600</p>
           </div>
           <div className="card p-5 text-center">
             <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Math</p>
             <p className="text-3xl font-display font-bold text-amber-600 dark:text-amber-400">
-              {mathScaled}
+              {mathRange.lower}–{mathRange.upper}
             </p>
-            <p className="text-xs text-sat-gray-400 mt-1">{mathRaw}/{mathTotal} correct</p>
+            <p className="text-xs text-sat-gray-500 mt-1">{mathRaw}/{mathTotal} correct</p>
           </div>
         </div>
+        <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-8">
+          Estimate based on College Board&apos;s published conversion tables. The real test is
+          adaptive, so your official score may differ.
+        </p>
 
         {xpResult && xpResult.total > 0 && (
           <motion.div

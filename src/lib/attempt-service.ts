@@ -10,7 +10,7 @@ import {
   isCorrect,
   isModuleKey,
   isPhase,
-  resumablePhase,
+  resumeScreen,
   type AttemptModulePayload,
   type AttemptPayload,
   type ModuleKey,
@@ -153,7 +153,7 @@ export async function hydrateAttempt(attempt: AttemptRow): Promise<AttemptPayloa
         : attempt.status === "abandoned"
         ? "abandoned"
         : "in_progress",
-    phase: isPhase(attempt.phase) ? resumablePhase(attempt.phase) : "intro",
+    phase: resumeScreen(modules, isPhase(attempt.phase) ? attempt.phase : "intro"),
     startedAt: attempt.startedAt.toISOString(),
     completedAt: attempt.completedAt ? attempt.completedAt.toISOString() : null,
     rwRaw: attempt.rwRaw,

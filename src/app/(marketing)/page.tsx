@@ -48,11 +48,11 @@ const FEATURES = [
   },
   {
     icon: Target,
-    title: "700+ Questions",
+    title: "500+ Questions",
     subtitle: "Real exam feel, every session",
     description:
       "Hard SAT-style questions across Math and Reading, all with detailed explanations that teach not just what's correct, but why.",
-    stat: "700+",
+    stat: "500+",
     statLabel: "questions",
   },
 ];
@@ -144,7 +144,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.3 }}
             >
-              Structured SAT prep: bite-sized lessons, real questions, daily
+              Structured SAT prep: bite-sized lessons, practice questions, daily
               streaks. Level up your score one session at a time.
             </motion.p>
 
@@ -187,7 +187,7 @@ export default function LandingPage() {
               transition={{ delay: 0.75 }}
             >
               {[
-                { val: "700+", lbl: "SAT questions" },
+                { val: "500+", lbl: "practice questions" },
                 { val: "24+", lbl: "structured lessons" },
                 { val: "Free", lbl: "to get started" },
               ].map(({ val, lbl }) => (
@@ -542,8 +542,20 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════
           FOOTER
       ═══════════════════════════════════════════ */}
-      <footer className="py-10 bg-sat-gray-900 dark:bg-black text-white/25 text-center text-sm border-t border-white/5">
-        © {new Date().getFullYear()} cain
+      <footer className="py-10 bg-sat-gray-900 dark:bg-black text-white/25 text-center text-sm border-t border-white/5 space-y-3">
+        <div>© {new Date().getFullYear()} cain</div>
+        <div className="flex items-center justify-center gap-4 text-xs">
+          <Link href="/privacy" className="hover:text-white/50 transition-colors">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-white/50 transition-colors">
+            Terms
+          </Link>
+        </div>
+        <p className="text-xs text-white/15 max-w-lg mx-auto px-6">
+          SAT® is a trademark registered by College Board, which is not affiliated with and does
+          not endorse this site.
+        </p>
       </footer>
     </div>
   );

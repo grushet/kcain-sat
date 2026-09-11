@@ -173,11 +173,11 @@ export function QuestionReview({
                       </span>
                       <DiffBadge d={q.difficulty} />
                       {q.skill_desc && (
-                        <span className="text-xs text-sat-gray-400 dark:text-sat-gray-500 truncate hidden sm:block">
+                        <span className="text-xs text-sat-gray-500 dark:text-sat-gray-500 truncate hidden sm:block">
                           {q.skill_desc}
                         </span>
                       )}
-                      <span className="ml-auto text-sat-gray-400 text-xs">
+                      <span className="ml-auto text-sat-gray-500 text-xs">
                         {isOpen ? "▲" : "▼"}
                       </span>
                     </button>
@@ -275,6 +275,12 @@ export function QuestionReview({
                                   dangerouslySetInnerHTML={{ __html: q.rationale }}
                                 />
                               </div>
+                            )}
+
+                            {!q.externalId.startsWith("bank:") && (
+                              <p className="text-xs text-sat-gray-500 dark:text-sat-gray-500">
+                                Question © College Board
+                              </p>
                             )}
                           </div>
                         </motion.div>

@@ -324,7 +324,7 @@ export default function PracticeTopicPage() {
                   <ExternalLink className="w-4 h-4" />
                   Open graphing calculator in new tab
                 </a>
-                <span className="text-sat-gray-400 dark:text-sat-gray-500">|</span>
+                <span className="text-sat-gray-500 dark:text-sat-gray-500">|</span>
                 <a
                   href={DESMOS_SCIENTIFIC_URL}
                   target="_blank"

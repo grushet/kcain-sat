@@ -117,7 +117,7 @@
   .path-node-play  { @apply flex items-center justify-center; }
 
   .path-node--locked {
-    @apply bg-sat-gray-200 border-sat-gray-300 text-sat-gray-400 cursor-not-allowed
+    @apply bg-sat-gray-200 border-sat-gray-300 text-sat-gray-500 cursor-not-allowed
            dark:bg-sat-dusk dark:border-sat-horizon dark:text-sat-mist;
   }
   .path-node--available {
@@ -149,7 +149,7 @@
            border-2 transition-all duration-300 cursor-pointer;
   }
   .skill-node--locked {
-    @apply bg-sat-gray-200 border-sat-gray-300 text-sat-gray-400 cursor-not-allowed
+    @apply bg-sat-gray-200 border-sat-gray-300 text-sat-gray-500 cursor-not-allowed
            dark:bg-sat-dusk dark:border-sat-horizon dark:text-sat-mist;
   }
   .skill-node--available {

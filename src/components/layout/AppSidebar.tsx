@@ -17,6 +17,7 @@ import {
   X,
   CheckSquare,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
 import { KcainLogo } from "./KcainLogo";
 import { useState } from "react";
@@ -39,6 +40,19 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== "DELETE") return;
+    setDeleting(true);
+    try {
+      await fetch("/api/me", { method: "DELETE" });
+    } finally {
+      await signOut({ callbackUrl: "/" });
+    }
+  }
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -150,6 +164,59 @@ export function AppSidebar() {
           <LogOut className="w-4 h-4 shrink-0" />
           Sign out
         </button>
+
+        {/* Delete account */}
+        {!deleteOpen ? (
+          <button
+            onClick={() => setDeleteOpen(true)}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-black/40 dark:text-sat-mist/70 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-all duration-150"
+          >
+            <Trash2 className="w-4 h-4 shrink-0" />
+            Delete my account
+          </button>
+        ) : (
+          <div className="px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 space-y-2">
+            <p className="text-xs text-red-700 dark:text-red-300">
+              This permanently deletes your account and everything in it. Type DELETE to confirm.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-red-300 dark:border-red-800 bg-white dark:bg-sat-dusk text-black dark:text-sat-frost outline-none focus:ring-2 focus:ring-red-400"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== "DELETE" || deleting}
+                className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
+              >
+                {deleting ? "Deleting…" : "Confirm delete"}
+              </button>
+              <button
+                onClick={() => {
+                  setDeleteOpen(false);
+                  setDeleteConfirmText("");
+                }}
+                disabled={deleting}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg text-black/60 dark:text-sat-mist hover:bg-black/5 dark:hover:bg-white/5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Legal */}
+        <div className="flex items-center gap-3 px-3 pt-1 text-[11px] text-black/35 dark:text-sat-mist/50">
+          <Link href="/privacy" className="hover:underline" onClick={() => setMobileOpen(false)}>
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:underline" onClick={() => setMobileOpen(false)}>
+            Terms
+          </Link>
+        </div>
       </div>
     </aside>
   );

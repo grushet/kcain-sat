@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Trophy } from "lucide-react";
 import { MODULE_META, type AttemptPayload } from "@/lib/test-attempt";
 import { QuestionReview, type ReviewGroup } from "@/components/review/QuestionReview";
+import { estimateSectionRange } from "@/lib/scoring";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -79,6 +80,16 @@ export default function AttemptReviewPage() {
     }));
 
   const unfinished = attempt.status !== "completed";
+  const hasRawCounts =
+    attempt.rwRaw != null && attempt.rwMax != null && attempt.mathRaw != null && attempt.mathMax != null;
+  const rwRange = hasRawCounts
+    ? estimateSectionRange(attempt.rwRaw!, attempt.rwMax!, "reading_writing")
+    : null;
+  const mathRange = hasRawCounts ? estimateSectionRange(attempt.mathRaw!, attempt.mathMax!, "math") : null;
+  const totalRange =
+    rwRange && mathRange
+      ? { lower: rwRange.lower + mathRange.lower, upper: rwRange.upper + mathRange.upper }
+      : null;
 
   return (
     <motion.div
@@ -110,35 +121,43 @@ export default function AttemptReviewPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="card p-5 text-center">
-            <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">
-              Reading &amp; Writing
-            </p>
-            <p className="text-3xl font-display font-bold text-sky-600 dark:text-sky-400">
-              {attempt.rwScaled}
-            </p>
-            <p className="text-xs text-sat-gray-400 mt-1">
-              {attempt.rwRaw}/{attempt.rwMax} correct
-            </p>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+            <div className="card p-5 text-center">
+              <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">
+                Reading &amp; Writing
+              </p>
+              <p className="text-3xl font-display font-bold text-sky-600 dark:text-sky-400">
+                {rwRange ? `${rwRange.lower}–${rwRange.upper}` : attempt.rwScaled}
+              </p>
+              <p className="text-xs text-sat-gray-500 mt-1">
+                {attempt.rwRaw}/{attempt.rwMax} correct
+              </p>
+            </div>
+            <div className="card p-5 text-center ring-2 ring-sat-primary">
+              <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Total Score</p>
+              <p className="text-3xl font-display font-bold text-sat-primary">
+                {totalRange ? `${totalRange.lower}–${totalRange.upper}` : attempt.totalScaled}
+              </p>
+              <p className="text-xs text-sat-gray-500 mt-1">out of 1600</p>
+            </div>
+            <div className="card p-5 text-center">
+              <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Math</p>
+              <p className="text-3xl font-display font-bold text-amber-600 dark:text-amber-400">
+                {mathRange ? `${mathRange.lower}–${mathRange.upper}` : attempt.mathScaled}
+              </p>
+              <p className="text-xs text-sat-gray-500 mt-1">
+                {attempt.mathRaw}/{attempt.mathMax} correct
+              </p>
+            </div>
           </div>
-          <div className="card p-5 text-center ring-2 ring-sat-primary">
-            <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Total Score</p>
-            <p className="text-3xl font-display font-bold text-sat-primary">
-              {attempt.totalScaled}
+          {totalRange && (
+            <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-8">
+              Estimate based on College Board&apos;s published conversion tables. The real test is
+              adaptive, so your official score may differ.
             </p>
-            <p className="text-xs text-sat-gray-400 mt-1">out of 1600</p>
-          </div>
-          <div className="card p-5 text-center">
-            <p className="text-xs text-sat-gray-500 dark:text-sat-gray-400 mb-1">Math</p>
-            <p className="text-3xl font-display font-bold text-amber-600 dark:text-amber-400">
-              {attempt.mathScaled}
-            </p>
-            <p className="text-xs text-sat-gray-400 mt-1">
-              {attempt.mathRaw}/{attempt.mathMax} correct
-            </p>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       <h2 className="font-display font-bold text-lg dark:text-white mb-3">Question Review</h2>

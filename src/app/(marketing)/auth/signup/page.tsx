@@ -158,7 +158,7 @@ export default function SignUpPage() {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-sat-gray-200 dark:border-sat-gray-600" />
               </div>
-              <div className="relative flex justify-center text-xs text-sat-gray-400 dark:text-sat-gray-500">
+              <div className="relative flex justify-center text-xs text-sat-gray-500 dark:text-sat-gray-500">
                 <span className="bg-white dark:bg-sat-gray-800 px-3">or sign up with email</span>
               </div>
             </div>
