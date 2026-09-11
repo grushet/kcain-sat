@@ -10,6 +10,8 @@
 export const MAX_TASKS = 500;
 export const MAX_SUBTASKS_PER_TASK = 100;
 export const MAX_TEXT = 500;
+/** Notes are prose, so they get far more room than a title. */
+export const MAX_DESCRIPTION = 5000;
 
 const IMPORTANCE = new Set(["high", "med", "low"]);
 const REPEAT_UNITS = new Set(["days", "weeks", "months"]);
@@ -36,6 +38,8 @@ export interface NormalisedTask {
   repeatUnit: string | null;
   reminder: string | null;
   reminderFired: boolean;
+  description: string | null;
+  pinIndex: number | null;
   sortOrder: number;
   subtasks: NormalisedSubtask[];
 }
@@ -67,6 +71,24 @@ export function cleanDate(value: unknown): string | null {
 /** A local wall-clock time, also kept as a string. */
 export function cleanReminder(value: unknown): string | null {
   return typeof value === "string" && YMD_HM.test(value) ? value : null;
+}
+
+/** Notes. Empty is stored as null, so "has notes" is one test everywhere. */
+export function cleanDescription(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, MAX_DESCRIPTION) : null;
+}
+
+/**
+ * A hand-placed position. Bounded by the list limit: an index far outside the
+ * list would still sort, but there is no honest way to have got one, and an
+ * unbounded integer from a client-controlled body is not worth storing.
+ */
+export function cleanPinIndex(value: unknown): number | null {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0 || n >= MAX_TASKS) return null;
+  return n;
 }
 
 export function cleanImportance(value: unknown): string | null {
@@ -130,6 +152,8 @@ export function normaliseTasks(incoming: unknown[]): NormalisedTask[] {
       repeatUnit: repeat?.unit ?? null,
       reminder: cleanReminder(raw?.reminder),
       reminderFired: Boolean(raw?.reminderFired),
+      description: cleanDescription(raw?.description),
+      pinIndex: cleanPinIndex(raw?.pinIndex),
       // Position in the posted list, not the loop index, so dropped rows do not
       // leave gaps in the ordering.
       sortOrder: tasks.length,

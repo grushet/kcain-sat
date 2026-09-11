@@ -32,7 +32,7 @@ import {
   studyDayKey,
   studyDaysBetween,
 } from "../src/lib/xp";
-import { normaliseTasks, MAX_TEXT } from "../src/lib/planner-normalise";
+import { normaliseTasks, MAX_TEXT, MAX_DESCRIPTION } from "../src/lib/planner-normalise";
 import { reminderStatus, wallClockInZone, isValidTimeZone } from "../src/lib/planner-reminders";
 import { safeCallbackUrl, DEFAULT_AFTER_LOGIN } from "../src/lib/login-redirect";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_DOMAIN } from "../src/lib/session-cookie";
@@ -235,6 +235,13 @@ eq("completed is coerced to a real boolean", normaliseTasks([{ ...okTask, comple
 eq("subtasks are normalised too", normaliseTasks([{ ...okTask, subtasks: [{ id: "s1", text: "part" }, { text: "no id" }] }])[0].subtasks.map((s) => s.id), ["s1"]);
 eq("a non-array subtasks field does not throw", normaliseTasks([{ ...okTask, subtasks: "nope" }])[0].subtasks, []);
 eq("a null entry in the list is skipped", normaliseTasks([null, okTask]).length, 1);
+eq("notes survive the round trip", normaliseTasks([{ ...okTask, description: " read ch 4 " }])[0].description, "read ch 4");
+eq("empty notes become null", normaliseTasks([{ ...okTask, description: "   " }])[0].description, null);
+eq("runaway notes are truncated, not rejected", normaliseTasks([{ ...okTask, description: "x".repeat(9000) }])[0].description!.length, MAX_DESCRIPTION);
+eq("a hand-placed position is kept", normaliseTasks([{ ...okTask, pinIndex: 3 }])[0].pinIndex, 3);
+eq("no pin means null, not zero", normaliseTasks([okTask])[0].pinIndex, null);
+eq("a negative or fractional pin is refused", normaliseTasks([{ ...okTask, pinIndex: -1 }, { id: "a2", text: "t", pinIndex: 1.5 }]).map((t) => t.pinIndex), [null, null]);
+eq("a pin past the list limit is refused", normaliseTasks([{ ...okTask, pinIndex: 99999 }])[0].pinIndex, null);
 
 // ---- planner reminders ---------------------------------------------------
 // The reminder cron reads "now" through the student's IANA zone and compares

@@ -434,6 +434,15 @@ model PlannerTask {
   reminder      String?
   reminderFired Boolean @default(false)
 
+  /// Free-text notes. Never drawn in the list, only in the task's own panel.
+  description String?
+
+  /// Where the student put this task by hand inside its group, or null while
+  /// the sort is deciding. Deliberately not sortOrder: sortOrder is the order
+  /// the list happened to be posted in, and a pin has to survive the client
+  /// re-sorting by date or importance on top of it.
+  pinIndex Int?
+
   /// Position in the list. The client prepends new tasks, so this descends.
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())

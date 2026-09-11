@@ -23,6 +23,8 @@ export interface PlannerTaskDTO {
   repeat: { n: number; unit: string } | null;
   reminder: string | null;
   reminderFired: boolean;
+  description: string | null;
+  pinIndex: number | null;
   subtasks: PlannerSubtaskDTO[];
 }
 
@@ -56,6 +58,8 @@ export async function GET(req: Request) {
           t.repeatN && t.repeatUnit ? { n: t.repeatN, unit: t.repeatUnit } : null,
         reminder: t.reminder,
         reminderFired: t.reminderFired,
+        description: t.description,
+        pinIndex: t.pinIndex,
         subtasks: t.subtasks.map((s) => ({
           id: s.id,
           text: s.text,
