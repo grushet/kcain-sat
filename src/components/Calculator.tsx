@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Calculator as CalcIcon, X } from "lucide-react";
-import { motion, useDragControls } from "framer-motion";
+import { Calculator as CalcIcon, GripHorizontal, X } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface CalculatorProps {
   /** Overrides the floating button's fixed position, e.g. to clear other bottom-anchored UI. */
@@ -11,19 +11,86 @@ interface CalculatorProps {
   resetKey?: string | number;
 }
 
+interface Box {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+const DEFAULT_WIDTH = 360;
+const DEFAULT_HEIGHT = 460;
+const MIN_WIDTH = 280;
+const MIN_HEIGHT = 320;
+const MARGIN = 16;
+
 export function Calculator({ positionClassName = "bottom-6 right-6", resetKey }: CalculatorProps) {
   const [open, setOpen] = useState(false);
-  const [everOpened, setEverOpened] = useState(false);
-  const dragControls = useDragControls();
-  const constraintsRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<Box | null>(null);
+  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; startLeft: number; startTop: number } | null>(null);
+  const resizeRef = useRef<{ pointerId: number; startX: number; startY: number; startWidth: number; startHeight: number } | null>(null);
+
+  const handleOpen = () => {
+    setOpen(true);
+    setBox((prev) => {
+      if (prev) return prev;
+      const left = Math.max(MARGIN, window.innerWidth - DEFAULT_WIDTH - 24);
+      const top = Math.min(80, Math.max(MARGIN, window.innerHeight - DEFAULT_HEIGHT - MARGIN));
+      return { left, top, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
+    });
+  };
+
+  const handleDragPointerDown = (e: React.PointerEvent) => {
+    if (!box) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, startLeft: box.left, startTop: box.top };
+  };
+
+  const handleDragPointerMove = (e: React.PointerEvent) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    setBox((prev) => {
+      if (!prev) return prev;
+      const maxLeft = Math.max(MARGIN, window.innerWidth - prev.width - MARGIN);
+      const maxTop = Math.max(MARGIN, window.innerHeight - prev.height - MARGIN);
+      const left = Math.min(maxLeft, Math.max(MARGIN, drag.startLeft + (e.clientX - drag.startX)));
+      const top = Math.min(maxTop, Math.max(MARGIN, drag.startTop + (e.clientY - drag.startY)));
+      return { ...prev, left, top };
+    });
+  };
+
+  const endDrag = (e: React.PointerEvent) => {
+    dragRef.current = null;
+  };
+
+  const handleResizePointerDown = (e: React.PointerEvent) => {
+    if (!box) return;
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    resizeRef.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, startWidth: box.width, startHeight: box.height };
+  };
+
+  const handleResizePointerMove = (e: React.PointerEvent) => {
+    const resize = resizeRef.current;
+    if (!resize || resize.pointerId !== e.pointerId) return;
+    setBox((prev) => {
+      if (!prev) return prev;
+      const maxWidth = Math.max(MIN_WIDTH, window.innerWidth - prev.left - MARGIN);
+      const maxHeight = Math.max(MIN_HEIGHT, window.innerHeight - prev.top - MARGIN);
+      const width = Math.min(maxWidth, Math.max(MIN_WIDTH, resize.startWidth + (e.clientX - resize.startX)));
+      const height = Math.min(maxHeight, Math.max(MIN_HEIGHT, resize.startHeight + (e.clientY - resize.startY)));
+      return { ...prev, width, height };
+    });
+  };
+
+  const endResize = (e: React.PointerEvent) => {
+    resizeRef.current = null;
+  };
 
   return (
     <>
       <motion.button
-        onClick={() => {
-          setEverOpened(true);
-          setOpen(true);
-        }}
+        onClick={handleOpen}
         className={`fixed ${positionClassName} z-40 w-14 h-14 rounded-2xl bg-gradient-to-br from-sat-primary to-sat-crimson dark:from-sky-500 dark:to-sky-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform`}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -32,43 +99,57 @@ export function Calculator({ positionClassName = "bottom-6 right-6", resetKey }:
         <CalcIcon className="w-7 h-7" />
       </motion.button>
 
-      {/* Drag boundary so the panel can't be dragged off-screen */}
-      <div ref={constraintsRef} className="fixed inset-4 z-40 pointer-events-none" />
-
-      {everOpened && (
+      {box && (
         <motion.div
-          drag
-          dragControls={dragControls}
-          dragListener={false}
-          dragMomentum={false}
-          dragConstraints={constraintsRef}
+          animate={{ opacity: open ? 1 : 0, scale: open ? 1 : 0.96 }}
+          transition={{ type: "spring", damping: 25 }}
           style={{
+            left: box.left,
+            top: box.top,
+            width: box.width,
+            height: box.height,
             visibility: open ? "visible" : "hidden",
             pointerEvents: open ? "auto" : "none",
           }}
-          className="fixed top-20 right-4 sm:right-6 z-50 w-[360px] max-w-[92vw] h-[460px] max-h-[70vh] min-w-[280px] min-h-[320px] resize overflow-hidden bg-white dark:bg-sat-gray-800 rounded-2xl shadow-2xl border border-sat-gray-200 dark:border-sat-gray-700 flex flex-col"
+          className="fixed z-50 rounded-2xl shadow-2xl border border-sat-gray-200 dark:border-sat-gray-700"
         >
-          <div
-            onPointerDown={(e) => dragControls.start(e)}
-            className="flex items-center justify-between px-3 py-2 border-b border-sat-gray-200 dark:border-sat-gray-700 bg-gradient-to-r from-sat-primary/10 to-sat-crimson/10 dark:from-sky-500/10 dark:to-sky-600/10 cursor-move select-none shrink-0"
-          >
-            <h3 className="font-display font-bold text-sm dark:text-white">Desmos Calculator</h3>
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setOpen(false)}
-              className="p-1.5 rounded-lg hover:bg-sat-gray-200 dark:hover:bg-sat-gray-700 transition-colors dark:text-white"
-              title="Close (your work is kept until the next question)"
+          <div className="absolute inset-0 rounded-2xl overflow-hidden bg-white dark:bg-sat-gray-800 flex flex-col">
+            <div
+              onPointerDown={handleDragPointerDown}
+              onPointerMove={handleDragPointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              style={{ touchAction: "none" }}
+              className="relative flex items-center justify-center h-6 shrink-0 cursor-move select-none bg-sat-gray-100 dark:bg-sat-gray-700/60 border-b border-sat-gray-200 dark:border-sat-gray-700"
             >
-              <X className="w-4 h-4" />
-            </button>
+              <GripHorizontal className="w-4 h-4 text-sat-gray-400 dark:text-sat-gray-500" />
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => setOpen(false)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-sat-gray-200 dark:hover:bg-sat-gray-600 transition-colors text-sat-gray-500 dark:text-sat-gray-300"
+                title="Close (your work is kept until the next question)"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <iframe
+                key={resetKey}
+                src="https://www.desmos.com/calculator"
+                className="w-full h-full border-0"
+                title="Desmos Calculator"
+              />
+            </div>
           </div>
-          <div className="flex-1 min-h-0">
-            <iframe
-              key={resetKey}
-              src="https://www.desmos.com/calculator"
-              className="w-full h-full border-0"
-              title="Desmos Calculator"
-            />
+          <div
+            onPointerDown={handleResizePointerDown}
+            onPointerMove={handleResizePointerMove}
+            onPointerUp={endResize}
+            onPointerCancel={endResize}
+            style={{ touchAction: "none" }}
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
+          >
+            <div className="absolute bottom-1 right-1 w-2 h-2 border-b-2 border-r-2 border-sat-gray-400 dark:border-sat-gray-500 rounded-br-sm" />
           </div>
         </motion.div>
       )}
