@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         <div className="space-y-6 text-black/75 dark:text-sat-mist leading-relaxed">
           <p>
             cain (cainsat.org) is a student-built project, not a company. If you have a question
-            about this policy or your data, contact <strong>[owner email]</strong>.
+            about this policy or your data, contact <strong>stas.grushetzky@gmail.com</strong>.
           </p>
 
           <p>
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-display font-bold mt-8 mb-2">Deleting your data</h2>
           <p>
             You can delete your account and everything tied to it at any time from the sidebar
-            (Delete my account). You can also email <strong>[owner email]</strong> to request
+            (Delete my account). You can also email <strong>stas.grushetzky@gmail.com</strong> to request
             deletion.
           </p>
 

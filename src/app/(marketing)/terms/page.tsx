@@ -17,7 +17,7 @@ export default function TermsPage() {
           <p>
             cain (cainsat.org) is a student-built educational project, not a company. It is not
             affiliated with or endorsed by College Board. SAT® is a trademark registered by
-            College Board. Questions about these terms can go to <strong>[owner email]</strong>.
+            College Board. Questions about these terms can go to <strong>stas.grushetzky@gmail.com</strong>.
           </p>
 
           <h2 className="text-xl font-display font-bold mt-8 mb-2">Educational use only</h2>
