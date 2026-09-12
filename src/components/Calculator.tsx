@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Calculator as CalcIcon, GripHorizontal, X } from "lucide-react";
+import { Calculator as CalcIcon, GripHorizontal, Minus, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface CalculatorProps {
@@ -23,9 +23,11 @@ const DEFAULT_HEIGHT = 460;
 const MIN_WIDTH = 280;
 const MIN_HEIGHT = 320;
 const MARGIN = 16;
+const HEADER_HEIGHT = 24;
 
 export function Calculator({ positionClassName = "bottom-6 right-6", resetKey }: CalculatorProps) {
   const [open, setOpen] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const [box, setBox] = useState<Box | null>(null);
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; startLeft: number; startTop: number } | null>(null);
   const resizeRef = useRef<{ pointerId: number; startX: number; startY: number; startWidth: number; startHeight: number } | null>(null);
@@ -107,7 +109,7 @@ export function Calculator({ positionClassName = "bottom-6 right-6", resetKey }:
             left: box.left,
             top: box.top,
             width: box.width,
-            height: box.height,
+            height: minimized ? HEADER_HEIGHT : box.height,
             visibility: open ? "visible" : "hidden",
             pointerEvents: open ? "auto" : "none",
           }}
@@ -123,14 +125,24 @@ export function Calculator({ positionClassName = "bottom-6 right-6", resetKey }:
               className="relative flex items-center justify-center h-6 shrink-0 cursor-move select-none bg-sat-gray-100 dark:bg-sat-gray-700/60 border-b border-sat-gray-200 dark:border-sat-gray-700"
             >
               <GripHorizontal className="w-4 h-4 text-sat-gray-400 dark:text-sat-gray-500" />
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setOpen(false)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-sat-gray-200 dark:hover:bg-sat-gray-600 transition-colors text-sat-gray-500 dark:text-sat-gray-300"
-                title="Close (your work is kept until the next question)"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => setMinimized((m) => !m)}
+                  className="p-1 rounded-md hover:bg-sat-gray-200 dark:hover:bg-sat-gray-600 transition-colors text-sat-gray-500 dark:text-sat-gray-300"
+                  title={minimized ? "Restore calculator" : "Minimize (keeps your work)"}
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => setOpen(false)}
+                  className="p-1 rounded-md hover:bg-sat-gray-200 dark:hover:bg-sat-gray-600 transition-colors text-sat-gray-500 dark:text-sat-gray-300"
+                  title="Close (your work is kept until the next question)"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <div className="flex-1 min-h-0">
               <iframe
@@ -141,16 +153,18 @@ export function Calculator({ positionClassName = "bottom-6 right-6", resetKey }:
               />
             </div>
           </div>
-          <div
-            onPointerDown={handleResizePointerDown}
-            onPointerMove={handleResizePointerMove}
-            onPointerUp={endResize}
-            onPointerCancel={endResize}
-            style={{ touchAction: "none" }}
-            className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
-          >
-            <div className="absolute bottom-1 right-1 w-2 h-2 border-b-2 border-r-2 border-sat-gray-400 dark:border-sat-gray-500 rounded-br-sm" />
-          </div>
+          {!minimized && (
+            <div
+              onPointerDown={handleResizePointerDown}
+              onPointerMove={handleResizePointerMove}
+              onPointerUp={endResize}
+              onPointerCancel={endResize}
+              style={{ touchAction: "none" }}
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
+            >
+              <div className="absolute bottom-1 right-1 w-2 h-2 border-b-2 border-r-2 border-sat-gray-400 dark:border-sat-gray-500 rounded-br-sm" />
+            </div>
+          )}
         </motion.div>
       )}
     </>
