@@ -80,10 +80,6 @@ export default function PrivacyPage() {
             cain is served over HTTPS, uses secure session cookies, and restricts database access
             to the app itself.
           </p>
-
-          <p className="text-sm text-black/45 dark:text-sat-mist/70 mt-10">
-            This is not legal advice.
-          </p>
         </div>
       </div>
     </div>

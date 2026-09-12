@@ -55,10 +55,6 @@ export default function TermsPage() {
 
           <h2 className="text-xl font-display font-bold mt-8 mb-2">Governing law</h2>
           <p>These terms are governed by the laws of the State of Washington, USA.</p>
-
-          <p className="text-sm text-black/45 dark:text-sat-mist/70 mt-10">
-            This is not legal advice.
-          </p>
         </div>
       </div>
     </div>
