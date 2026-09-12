@@ -1,21 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Calculator as CalcIcon, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useDragControls } from "framer-motion";
 
 interface CalculatorProps {
   /** Overrides the floating button's fixed position, e.g. to clear other bottom-anchored UI. */
   positionClassName?: string;
+  /** Changing this value clears the calculator's work (e.g. pass the current question index). */
+  resetKey?: string | number;
 }
 
-export function Calculator({ positionClassName = "bottom-6 right-6" }: CalculatorProps) {
+export function Calculator({ positionClassName = "bottom-6 right-6", resetKey }: CalculatorProps) {
   const [open, setOpen] = useState(false);
+  const [everOpened, setEverOpened] = useState(false);
+  const dragControls = useDragControls();
+  const constraintsRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
       <motion.button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setEverOpened(true);
+          setOpen(true);
+        }}
         className={`fixed ${positionClassName} z-40 w-14 h-14 rounded-2xl bg-gradient-to-br from-sat-primary to-sat-crimson dark:from-sky-500 dark:to-sky-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform`}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -24,48 +32,46 @@ export function Calculator({ positionClassName = "bottom-6 right-6" }: Calculato
         <CalcIcon className="w-7 h-7" />
       </motion.button>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 md:p-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+      {/* Drag boundary so the panel can't be dragged off-screen */}
+      <div ref={constraintsRef} className="fixed inset-4 z-40 pointer-events-none" />
+
+      {everOpened && (
+        <motion.div
+          drag
+          dragControls={dragControls}
+          dragListener={false}
+          dragMomentum={false}
+          dragConstraints={constraintsRef}
+          style={{
+            visibility: open ? "visible" : "hidden",
+            pointerEvents: open ? "auto" : "none",
+          }}
+          className="fixed top-20 right-4 sm:right-6 z-50 w-[360px] max-w-[92vw] h-[460px] max-h-[70vh] min-w-[280px] min-h-[320px] resize overflow-hidden bg-white dark:bg-sat-gray-800 rounded-2xl shadow-2xl border border-sat-gray-200 dark:border-sat-gray-700 flex flex-col"
+        >
+          <div
+            onPointerDown={(e) => dragControls.start(e)}
+            className="flex items-center justify-between px-3 py-2 border-b border-sat-gray-200 dark:border-sat-gray-700 bg-gradient-to-r from-sat-primary/10 to-sat-crimson/10 dark:from-sky-500/10 dark:to-sky-600/10 cursor-move select-none shrink-0"
+          >
+            <h3 className="font-display font-bold text-sm dark:text-white">Desmos Calculator</h3>
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={() => setOpen(false)}
+              className="p-1.5 rounded-lg hover:bg-sat-gray-200 dark:hover:bg-sat-gray-700 transition-colors dark:text-white"
+              title="Close (your work is kept until the next question)"
             >
-              <motion.div
-                className="w-full h-full md:h-[80vh] md:max-w-4xl max-h-[calc(100vh-2rem)] md:max-h-[calc(100vh-4rem)] z-50 bg-white dark:bg-sat-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                transition={{ type: "spring", damping: 25 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between p-4 border-b border-sat-gray-200 dark:border-sat-gray-700 bg-gradient-to-r from-sat-primary/10 to-sat-crimson/10 dark:from-sky-500/10 dark:to-sky-600/10 shrink-0">
-                  <h3 className="font-display font-bold text-lg dark:text-white">Desmos Graphing Calculator</h3>
-                  <button
-                    onClick={() => setOpen(false)}
-                    className="p-2 rounded-xl hover:bg-sat-gray-200 dark:hover:bg-sat-gray-700 transition-colors dark:text-white"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="flex-1 min-h-0 flex flex-col">
-                  <iframe
-                    src="https://www.desmos.com/calculator"
-                    className="w-full flex-1 min-h-0 border-0"
-                    title="Desmos Calculator"
-                  />
-                </div>
-                <p className="text-xs text-sat-gray-500 dark:text-sky-300 p-2 text-center bg-sat-gray-50 dark:bg-sat-gray-700/50 shrink-0">
-                  Use this calculator during practice. The SAT allows a calculator on the Math section.
-                </p>
-              </motion.div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex-1 min-h-0">
+            <iframe
+              key={resetKey}
+              src="https://www.desmos.com/calculator"
+              className="w-full h-full border-0"
+              title="Desmos Calculator"
+            />
+          </div>
+        </motion.div>
+      )}
     </>
   );
 }

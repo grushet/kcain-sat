@@ -957,7 +957,10 @@ export default function FullTestPage() {
       <div className="max-w-3xl mx-auto">
         {saveBanner}
         {isMathModule && (
-          <DesmosCalculator positionClassName="bottom-24 right-4 sm:bottom-6 sm:right-6" />
+          <DesmosCalculator
+            positionClassName="bottom-24 right-4 sm:bottom-6 sm:right-6"
+            resetKey={currentIdx}
+          />
         )}
 
         {/* Module header */}
