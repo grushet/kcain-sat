@@ -9,7 +9,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-white dark:bg-sat-night text-black dark:text-sat-frost">
       <div className="container mx-auto px-6 py-16 max-w-2xl">
         <p className="text-xs font-semibold tracking-wide uppercase text-black/40 dark:text-sat-mist mb-2">
-          Draft, last updated {LAST_UPDATED}
+          Last updated {LAST_UPDATED}
         </p>
         <h1 className="text-3xl md:text-4xl font-display font-bold mb-8">Privacy Policy</h1>
 
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
           </p>
 
           <p className="text-sm text-black/45 dark:text-sat-mist/70 mt-10">
-            This is a draft for the owner to review, not legal advice.
+            This is not legal advice.
           </p>
         </div>
       </div>
