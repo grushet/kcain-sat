@@ -4,14 +4,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Check, X, Calculator, ExternalLink, History, Zap } from "lucide-react";
+import { ArrowLeft, Check, X, History, Zap } from "lucide-react";
 import { getQuestionsByTopic } from "@/lib/questions";
 import type { PracticeBankQuestion } from "@/lib/questions";
 import { mathStr } from "@/components/MathText";
 import {
   PRACTICE_TOPIC_LABELS as TOPIC_LABELS,
   PRACTICE_TOPIC_MAP as TOPIC_MAP,
-  MATH_TOPIC_SLUGS,
 } from "@/lib/practice-topics";
 
 const QUESTIONS_PER_SESSION = 25;
@@ -84,9 +83,6 @@ async function closePracticeSession(sessionId: string): Promise<void> {
   }
 }
 
-const DESMOS_CALCULATOR_URL = "https://www.desmos.com/calculator";
-const DESMOS_SCIENTIFIC_URL = "https://www.desmos.com/scientific";
-
 export default function PracticeTopicPage() {
   const params = useParams();
   const router = useRouter();
@@ -101,7 +97,6 @@ export default function PracticeTopicPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
-  const [desmosOpen, setDesmosOpen] = useState(true);
 
   // The run being recorded. Held in a ref as well because answers are posted
   // from handlers that would otherwise capture a stale id.
@@ -112,8 +107,6 @@ export default function PracticeTopicPage() {
   const questionShownAt = useRef<number>(Date.now());
   /** Guards against two rapid answers each opening their own run. */
   const sessionPending = useRef<Promise<string | null> | null>(null);
-
-  const isMathTopic = topicSlug && MATH_TOPIC_SLUGS.has(topicSlug);
 
   useEffect(() => {
     const diff = difficulty === "all" ? undefined : difficulty as "easy" | "medium" | "hard" | "very_hard";
@@ -296,57 +289,6 @@ export default function PracticeTopicPage() {
           />
         </div>
       </div>
-
-      {isMathTopic && (
-        <div className="mb-6 card overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setDesmosOpen((o) => !o)}
-            className="w-full flex items-center justify-between gap-2 p-4 text-left hover:bg-sat-gray-50 dark:hover:bg-sat-gray-700/50 transition-colors"
-          >
-            <span className="flex items-center gap-2 font-display font-bold text-sat-gray-900 dark:text-white">
-              <Calculator className="w-5 h-5 text-sat-primary" />
-              Desmos Calculator
-            </span>
-            <span className="text-sm text-sat-gray-500 dark:text-sat-gray-400">
-              {desmosOpen ? "Hide" : "Show"} calculator
-            </span>
-          </button>
-          {desmosOpen && (
-            <div className="border-t border-sat-gray-100 dark:border-sat-gray-700">
-              <div className="flex flex-wrap gap-2 p-3 bg-sat-gray-50 dark:bg-sat-gray-800/50">
-                <a
-                  href={DESMOS_CALCULATOR_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-sat-primary hover:underline"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open graphing calculator in new tab
-                </a>
-                <span className="text-sat-gray-500 dark:text-sat-gray-500">|</span>
-                <a
-                  href={DESMOS_SCIENTIFIC_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-sat-primary hover:underline"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open scientific calculator
-                </a>
-              </div>
-              <div className="aspect-video w-full min-h-[280px] bg-sat-gray-100 dark:bg-sat-gray-800">
-                <iframe
-                  title="Desmos Graphing Calculator"
-                  src={DESMOS_CALCULATOR_URL}
-                  className="w-full h-full min-h-[280px] border-0"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       <AnimatePresence mode="wait">
         <motion.div
