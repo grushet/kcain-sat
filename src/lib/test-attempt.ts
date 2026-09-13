@@ -158,11 +158,50 @@ export interface AttemptModulePayload {
   questions: ClientQuestion[];
   answers: (string | null)[];
   times: (number | null)[];
+  /** "Mark for Review" flag per position, same ordering as questions. */
+  marked: boolean[];
+  /** Answer-option keys struck out per position. Always [] for a grid-in. */
+  crossedOut: string[][];
   currentIndex: number;
   secondsLeft: number | null;
   durationSeconds: number;
   status: "in_progress" | "completed";
   rawScore: number | null;
+}
+
+/** How many answer options a real SAT MCQ ever has; bounds a malformed write. */
+const MAX_OPTIONS_PER_QUESTION = 8;
+
+/** Normalises a "Mark for Review" flag array to exactly `length` booleans. */
+export function normaliseMarked(value: unknown, length: number): boolean[] {
+  const out = new Array<boolean>(length).fill(false);
+  if (!Array.isArray(value)) return out;
+  for (let i = 0; i < length; i++) {
+    if (value[i] === true) out[i] = true;
+  }
+  return out;
+}
+
+/**
+ * Normalises the option-eliminator state to exactly `length` positions, each a
+ * de-duplicated array of single-letter keys. Anything that is not a plausible
+ * option letter is dropped rather than stored, since it can never match a
+ * rendered option anyway.
+ */
+export function normaliseCrossedOut(value: unknown, length: number): string[][] {
+  const out: string[][] = Array.from({ length }, () => []);
+  if (!Array.isArray(value)) return out;
+  for (let i = 0; i < length; i++) {
+    const entry = value[i];
+    if (!Array.isArray(entry)) continue;
+    const keys = new Set<string>();
+    for (const k of entry) {
+      if (keys.size >= MAX_OPTIONS_PER_QUESTION) break;
+      if (typeof k === "string" && /^[A-Za-z]$/.test(k)) keys.add(k.toUpperCase());
+    }
+    out[i] = Array.from(keys);
+  }
+  return out;
 }
 
 export interface AttemptPayload {

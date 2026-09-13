@@ -25,6 +25,8 @@ import {
   shouldAcceptModuleWrite,
   clampDurationSeconds,
   isTimeMultiplier,
+  normaliseCrossedOut,
+  normaliseMarked,
   MODULE_META,
   type AttemptModulePayload,
   type ModuleKey,
@@ -137,6 +139,8 @@ function mod(key: ModuleKey, over: Partial<AttemptModulePayload> = {}): AttemptM
     questions: [],
     answers: [],
     times: [],
+    marked: [],
+    crossedOut: [],
     currentIndex: 0,
     secondsLeft: null,
     durationSeconds: MODULE_META[key].seconds,
@@ -324,6 +328,36 @@ eq("time and a half is allowed", isTimeMultiplier(1.5), true);
 eq("double time is allowed", isTimeMultiplier(2), true);
 eq("triple time is not an offered option", isTimeMultiplier(3), false);
 eq("a string is never a valid multiplier", isTimeMultiplier("2"), false);
+
+// ── Mark for Review / Option Eliminator persistence ─────────────────────────
+section("mark & cross-out");
+
+eq("a missing marked array reads as all-false", normaliseMarked(undefined, 3), [false, false, false]);
+eq(
+  "only exact `true` entries are kept, and the array is padded/truncated to length",
+  normaliseMarked([true, "true", 1, false], 3),
+  [true, false, false]
+);
+
+eq("a missing crossedOut array reads as empty per question", normaliseCrossedOut(undefined, 2), [
+  [],
+  [],
+]);
+eq(
+  "crossed-out letters are upper-cased and de-duplicated",
+  normaliseCrossedOut([["b", "B", "d"], "not-an-array"], 2),
+  [["B", "D"], []]
+);
+eq(
+  "junk entries that are not single letters are dropped",
+  normaliseCrossedOut([["A", "", "12", "bb", "C"]], 1),
+  [["A", "C"]]
+);
+eq(
+  "a malformed crossedOut value reads as empty per question rather than throwing",
+  normaliseCrossedOut("not an array", 2),
+  [[], []]
+);
 
 // ── Score estimate ──────────────────────────────────────────────────────────
 section("scoring");

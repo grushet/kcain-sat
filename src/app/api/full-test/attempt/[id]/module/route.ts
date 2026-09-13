@@ -8,6 +8,8 @@ import {
   countCorrect,
   isModuleKey,
   isPhase,
+  normaliseCrossedOut,
+  normaliseMarked,
   shouldAcceptModuleWrite,
   clampDurationSeconds,
 } from "@/lib/test-attempt";
@@ -122,6 +124,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 
   const answers = readAnswers(body.answers, questionIds.length);
   const times = readTimes(body.times, questionIds.length);
+  const marked = normaliseMarked(body.marked, questionIds.length);
+  const crossedOut = normaliseCrossedOut(body.crossedOut, questionIds.length);
   const completed = incomingStatus === "completed";
   const currentIndex = Number.isInteger(body.currentIndex)
     ? Math.min(Math.max(body.currentIndex as number, 0), Math.max(questionIds.length - 1, 0))
@@ -167,6 +171,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       questionIds,
       answers,
       times,
+      marked,
+      crossedOut,
       currentIndex,
       secondsLeft,
       durationSeconds,
@@ -177,6 +183,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     update: {
       answers,
       times,
+      marked,
+      crossedOut,
       currentIndex,
       secondsLeft,
       // A module that has been handed in stays handed in, so a stray autosave

@@ -10,6 +10,8 @@ import {
   isCorrect,
   isModuleKey,
   isPhase,
+  normaliseCrossedOut,
+  normaliseMarked,
   resumeScreen,
   type AttemptModulePayload,
   type AttemptPayload,
@@ -50,6 +52,8 @@ type ModuleRow = {
   questionIds: unknown;
   answers: unknown;
   times: unknown;
+  marked: unknown;
+  crossedOut: unknown;
   currentIndex: number;
   secondsLeft: number | null;
   durationSeconds: number;
@@ -82,6 +86,8 @@ export const ATTEMPT_INCLUDE = {
       questionIds: true,
       answers: true,
       times: true,
+      marked: true,
+      crossedOut: true,
       currentIndex: true,
       secondsLeft: true,
       durationSeconds: true,
@@ -119,16 +125,22 @@ export async function hydrateAttempt(attempt: AttemptRow): Promise<AttemptPayloa
     const ids = asStringArray(mod.questionIds);
     const answers = asAnswerArray(mod.answers, ids.length);
     const times = asTimeArray(mod.times, ids.length);
+    const marked = normaliseMarked(mod.marked, ids.length);
+    const crossedOut = normaliseCrossedOut(mod.crossedOut, ids.length);
 
     const questions: ClientQuestion[] = [];
     const keptAnswers: (string | null)[] = [];
     const keptTimes: (number | null)[] = [];
+    const keptMarked: boolean[] = [];
+    const keptCrossedOut: string[][] = [];
     ids.forEach((id, i) => {
       const q = byId.get(id);
       if (!q) return;
       questions.push(q);
       keptAnswers.push(answers[i] ?? null);
       keptTimes.push(times[i] ?? null);
+      keptMarked.push(marked[i] ?? false);
+      keptCrossedOut.push(crossedOut[i] ?? []);
     });
 
     modules.push({
@@ -137,6 +149,8 @@ export async function hydrateAttempt(attempt: AttemptRow): Promise<AttemptPayloa
       questions,
       answers: keptAnswers,
       times: keptTimes,
+      marked: keptMarked,
+      crossedOut: keptCrossedOut,
       currentIndex: Math.min(Math.max(mod.currentIndex, 0), Math.max(questions.length - 1, 0)),
       secondsLeft: mod.secondsLeft,
       durationSeconds: mod.durationSeconds || MODULE_META[mod.key].seconds,

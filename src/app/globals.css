@@ -169,6 +169,26 @@
 
 @layer utilities {
 
+  /* ─── Screen-reader-only ───
+     Collegeboard question HTML marks its own accessibility text (figure long
+     descriptions, "___blank" spoken-word fillers) with class="sr-only" and
+     expects the class to already exist on the page. It didn't: Tailwind's JIT
+     only emits classes it finds in src/, and nothing here used the name, so
+     the class was inert and that text rendered as plain visible body copy
+     ("Angle upper A upper C upper B is a right angle", "(0.3 comma 8.3)",
+     "____blank"). This is the standard visually-hidden-but-audible pattern. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
   /* ─── Grid & dots backgrounds ─── */
   .bg-grid {
     background-image:

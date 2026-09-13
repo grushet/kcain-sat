@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Check, X, History, Zap } from "lucide-react";
+import { ArrowLeft, Check, X, History, Zap, Eraser, Undo2 } from "lucide-react";
 import { getQuestionsByTopic } from "@/lib/questions";
 import type { PracticeBankQuestion } from "@/lib/questions";
 import { mathStr } from "@/components/MathText";
@@ -98,6 +98,13 @@ export default function PracticeTopicPage() {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
+  // Option Eliminator. Practice has no server-side resume, so unlike the full
+  // test's version this is UI state only: "on" persists across questions the
+  // way the student left it, but which choices are struck out is always
+  // specific to the question on screen and clears with it.
+  const [eliminatorOn, setEliminatorOn] = useState(false);
+  const [crossedOut, setCrossedOut] = useState<Set<string>>(new Set());
+
   // The run being recorded. Held in a ref as well because answers are posted
   // from handlers that would otherwise capture a stale id.
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -115,6 +122,7 @@ export default function PracticeTopicPage() {
     setShowResult(false);
     setScore(0);
     setSessionXp(0);
+    setCrossedOut(new Set());
     setQuestionsLoading(true);
     const next = getSessionQuestions(topic, diff);
     setQuestions(next);
@@ -141,6 +149,7 @@ export default function PracticeTopicPage() {
 
   useEffect(() => {
     questionShownAt.current = Date.now();
+    setCrossedOut(new Set());
   }, [current]);
 
   const q = questions[current];
@@ -195,6 +204,17 @@ export default function PracticeTopicPage() {
     setSelected(null);
     setShowResult(false);
     if (current < questions.length - 1) setCurrent((c) => c + 1);
+  };
+
+  /** Crossing out the choice currently selected deselects it, same as the full test. */
+  const toggleCrossOut = (key: string) => {
+    setCrossedOut((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+    setSelected((s) => (s === key ? null : s));
   };
 
   const handleFinish = () => {
@@ -299,31 +319,74 @@ export default function PracticeTopicPage() {
           transition={{ duration: 0.2 }}
           className="card p-6 md:p-8"
         >
-          <h2 className="font-display font-bold text-lg mb-4 dark:text-white">{label}</h2>
-          <p className="text-sat-gray-800 dark:text-sat-gray-200 whitespace-pre-line mb-6">{mathStr(q.question)}</p>
-          <div className="space-y-3">
-            {q.options.map((opt) => (
+          <div className="flex items-center justify-between mb-4 gap-2">
+            <h2 className="font-display font-bold text-lg dark:text-white">{label}</h2>
+            {!showResult && (
               <button
-                key={opt.key}
                 type="button"
-                disabled={showResult}
-                onClick={() => !showResult && setSelected(opt.key)}
-                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors flex items-center gap-3 ${
-                  selected !== opt.key && !showResult
-                    ? "border-sat-gray-200 dark:border-sat-gray-600 hover:border-sat-primary/50 dark:hover:border-sat-primary/50"
-                    : selected === opt.key && !showResult
-                    ? "border-sat-primary bg-sat-primary/10"
-                    : showResult && opt.key === q.correctKey
-                    ? "border-green-500 bg-green-500/10"
-                    : showResult && selected === opt.key
-                    ? "border-red-500 bg-red-500/10"
-                    : "border-sat-gray-200 dark:border-sat-gray-600"
+                onClick={() => setEliminatorOn((v) => !v)}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors flex-shrink-0 ${
+                  eliminatorOn
+                    ? "border-sat-primary bg-sat-primary/10 text-sat-primary"
+                    : "border-sat-gray-200 dark:border-sat-gray-600 text-sat-gray-500 dark:text-sat-gray-400"
                 }`}
               >
-                {showResult && (opt.key === q.correctKey ? <Check className="w-5 h-5 text-green-600 shrink-0" /> : selected === opt.key ? <X className="w-5 h-5 text-red-600 shrink-0" /> : null)}
-                <span className="font-medium dark:text-white">{opt.key}. {mathStr(opt.text)}</span>
+                <Eraser className="w-3.5 h-3.5" />
+                Eliminator {eliminatorOn ? "On" : "Off"}
               </button>
-            ))}
+            )}
+          </div>
+          <p className="text-sat-gray-800 dark:text-sat-gray-200 whitespace-pre-line mb-6">{mathStr(q.question)}</p>
+          <div className="space-y-3">
+            {q.options.map((opt) => {
+              const isCrossed = crossedOut.has(opt.key);
+              return (
+                <div key={opt.key} className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={showResult || isCrossed}
+                    onClick={() => !showResult && !isCrossed && setSelected(opt.key)}
+                    className={`flex-1 text-left px-4 py-3 rounded-lg border-2 transition-colors flex items-center gap-3 ${
+                      isCrossed && !showResult
+                        ? "border-sat-gray-200 dark:border-sat-gray-700 opacity-50 cursor-not-allowed"
+                        : selected !== opt.key && !showResult
+                        ? "border-sat-gray-200 dark:border-sat-gray-600 hover:border-sat-primary/50 dark:hover:border-sat-primary/50"
+                        : selected === opt.key && !showResult
+                        ? "border-sat-primary bg-sat-primary/10"
+                        : showResult && opt.key === q.correctKey
+                        ? "border-green-500 bg-green-500/10"
+                        : showResult && selected === opt.key
+                        ? "border-red-500 bg-red-500/10"
+                        : "border-sat-gray-200 dark:border-sat-gray-600"
+                    }`}
+                  >
+                    {showResult && (opt.key === q.correctKey ? <Check className="w-5 h-5 text-green-600 shrink-0" /> : selected === opt.key ? <X className="w-5 h-5 text-red-600 shrink-0" /> : null)}
+                    <span className={`font-medium dark:text-white ${isCrossed && !showResult ? "line-through" : ""}`}>
+                      {opt.key}. {mathStr(opt.text)}
+                    </span>
+                  </button>
+                  {eliminatorOn && !showResult && (
+                    <button
+                      type="button"
+                      onClick={() => toggleCrossOut(opt.key)}
+                      className={`w-9 h-9 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                        isCrossed
+                          ? "border-sat-primary text-sat-primary bg-sat-primary/10"
+                          : "border-sat-gray-300 dark:border-sat-gray-600 text-sat-gray-500 dark:text-sat-gray-400 hover:border-sat-primary/50"
+                      }`}
+                      title={isCrossed ? `Undo cross-out of ${opt.key}` : `Cross out ${opt.key}`}
+                      aria-label={isCrossed ? `Undo cross-out of ${opt.key}` : `Cross out ${opt.key}`}
+                    >
+                      {isCrossed ? (
+                        <Undo2 className="w-4 h-4" />
+                      ) : (
+                        <span className="text-xs font-bold line-through">{opt.key}</span>
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
           {showResult && q.explanation && (
             <div className="mt-6 p-4 rounded-lg bg-sat-gray-100 dark:bg-sat-gray-800 text-sat-gray-800 dark:text-sat-gray-200 text-sm">

@@ -342,6 +342,14 @@ model TestModule {
   answers     Json
   /// Seconds spent on each position, same ordering. Null where untracked.
   times       Json?
+  /// Which positions are flagged "Mark for Review", same ordering. Null (not
+  /// just an all-false array) until the student first uses the tool, so an old
+  /// row from before this column existed hydrates the same as one that never
+  /// touched it.
+  marked      Json?
+  /// Answer-option keys the student struck out at each position, e.g.
+  /// [[], ["B"], ["A","D"], []]. Grid-in positions are always [].
+  crossedOut  Json?
 
   /// Where the student was when the module was last saved, so a resume puts
   /// them back on the right question with the right time remaining.
