@@ -575,7 +575,7 @@ export default function FullTestPage() {
       endingPhase === "rw1"
         ? "rw1_done"
         : endingPhase === "rw2"
-        ? "math_intro"
+        ? "rw2_done"
         : endingPhase === "math1"
         ? "math1_done"
         : undefined;
@@ -599,7 +599,7 @@ export default function FullTestPage() {
       setPhase("rw1_done");
     } else if (endingPhase === "rw2") {
       setRw2Done(done);
-      setPhase("math_intro");
+      setPhase("rw2_done");
     } else if (endingPhase === "math1") {
       setMath1Done(done);
       setPhase("math1_done");
@@ -649,6 +649,12 @@ export default function FullTestPage() {
     }
   }
 
+  function handleContinueToMathIntro() {
+    setPhase("math_intro");
+    const id = attemptIdRef.current;
+    if (id) void savePhase(id, "math_intro");
+  }
+
   function handleStartMath1() {
     startModule(math1Qs, moduleDurationSeconds("math1", timeMultiplier), false);
     setPhase("math1");
@@ -691,7 +697,7 @@ export default function FullTestPage() {
 
   async function finishMath2(done: CompletedModule) {
     setMath2Done(done);
-    setPhase("results");
+    setPhase("math2_done");
     if (rw1Done && rw2Done && math1Done) {
       cacheLastTestLocally(rw1Done, rw2Done, math1Done, done);
     }
@@ -715,6 +721,12 @@ export default function FullTestPage() {
     } catch {
       setSaveWarning(SAVE_WARNING);
     }
+  }
+
+  function handleContinueToResults() {
+    setPhase("results");
+    const id = attemptIdRef.current;
+    if (id) void savePhase(id, "results");
   }
 
   function resetTest() {
@@ -1165,7 +1177,54 @@ export default function FullTestPage() {
     );
   }
 
-  // 5. Math intro (break between RW and Math)
+  // 5. RW Module 2 done
+  if (phase === "rw2_done" && rw1Done && rw2Done) {
+    const score = calcScore(rw2Done);
+    const sectionScore = calcScore(rw1Done) + score;
+    const sectionTotal = rw1Done.questions.length + rw2Done.questions.length;
+    return (
+      <motion.div
+        className="max-w-md mx-auto text-center"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {saveBanner}
+        <div className="card p-10 space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-sky-100 dark:bg-sky-900/40 flex items-center justify-center mx-auto">
+            <BookOpen className="w-8 h-8 text-sky-600 dark:text-sky-400" />
+          </div>
+          <div>
+            <h2 className="font-display font-bold text-xl dark:text-white mb-1">
+              R&amp;W Module 2 Complete
+            </h2>
+            <p className="text-sat-gray-500 dark:text-sat-gray-400 text-sm">
+              Reading &amp; Writing
+            </p>
+          </div>
+          <p className="text-5xl font-display font-bold text-sat-primary">
+            {score}
+            <span className="text-2xl text-sat-gray-500">/{rw2Done.questions.length}</span>
+          </p>
+          {moduleXpPill}
+          <p className="text-sm text-sat-gray-600 dark:text-sat-gray-400">
+            {sectionScore}/{sectionTotal} correct across both R&amp;W modules. Up next: Math.
+          </p>
+          {loadError && (
+            <p className="text-sm text-red-600 dark:text-red-400">{loadError}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleContinueToMathIntro}
+            className="btn-primary w-full flex items-center justify-center gap-2"
+          >
+            Continue to Math <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // 6. Math intro (break between RW and Math)
   if (phase === "math_intro") {
     return (
       <motion.div
@@ -1205,7 +1264,7 @@ export default function FullTestPage() {
     );
   }
 
-  // 6. Math Module 1 done
+  // 7. Math Module 1 done
   if (phase === "math1_done" && math1Done) {
     const score = calcScore(math1Done);
     const pct = Math.round((score / math1Done.questions.length) * 100);
@@ -1251,7 +1310,51 @@ export default function FullTestPage() {
     );
   }
 
-  // 7. Results
+  // 8. Math Module 2 done
+  if (phase === "math2_done" && math1Done && math2Done) {
+    const score = calcScore(math2Done);
+    const sectionScore = calcScore(math1Done) + score;
+    const sectionTotal = math1Done.questions.length + math2Done.questions.length;
+    return (
+      <motion.div
+        className="max-w-md mx-auto text-center"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {saveBanner}
+        <div className="card p-10 space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mx-auto">
+            <Calculator className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div>
+            <h2 className="font-display font-bold text-xl dark:text-white mb-1">
+              Math Module 2 Complete
+            </h2>
+          </div>
+          <p className="text-5xl font-display font-bold text-sat-primary">
+            {score}
+            <span className="text-2xl text-sat-gray-500">/{math2Done.questions.length}</span>
+          </p>
+          {moduleXpPill}
+          <p className="text-sm text-sat-gray-600 dark:text-sat-gray-400">
+            {sectionScore}/{sectionTotal} correct across both Math modules. That&apos;s the test done!
+          </p>
+          {loadError && (
+            <p className="text-sm text-red-600 dark:text-red-400">{loadError}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleContinueToResults}
+            className="btn-primary w-full flex items-center justify-center gap-2"
+          >
+            See Results <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // 9. Results
   if (phase === "results" && rw1Done && rw2Done && math1Done && math2Done) {
     const rwRaw = calcScore(rw1Done) + calcScore(rw2Done);
     const mathRaw = calcScore(math1Done) + calcScore(math2Done);

@@ -41,11 +41,13 @@ export const PHASES = [
   "rw1_done",
   "rw2_loading",
   "rw2",
+  "rw2_done",
   "math_intro",
   "math1",
   "math1_done",
   "math2_loading",
   "math2",
+  "math2_done",
   "results",
 ] as const;
 export type Phase = (typeof PHASES)[number];
@@ -93,7 +95,8 @@ export function resumeScreen(modules: AttemptModulePayload[], storedPhase: Phase
     // math1 is registered (in_progress, with questions) the instant the test
     // starts, so its mere presence does not mean the student has reached it.
     if (!math1) return storedPhase === "math1" ? "math1" : "math_intro";
-    return showsProgress(math1) ? "math1" : "math_intro";
+    if (showsProgress(math1)) return "math1";
+    return storedPhase === "rw2_done" ? "rw2_done" : "math_intro";
   }
 
   if (!hasQuestions(math2)) {
@@ -104,7 +107,7 @@ export function resumeScreen(modules: AttemptModulePayload[], storedPhase: Phase
     return "math2";
   }
 
-  return "results";
+  return storedPhase === "math2_done" ? "math2_done" : "results";
 }
 
 export function isCorrect(q: { correctAnswer: string[] }, answer: string | null): boolean {

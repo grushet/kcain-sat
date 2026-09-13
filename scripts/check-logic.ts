@@ -189,6 +189,18 @@ eq(
   ),
   "math_intro"
 );
+eq(
+  "rw2 completed with the 'rw2_done' phase stored lands on the rw2 score screen",
+  resumeScreen(
+    [
+      mod("rw1", { questions: oneQ, status: "completed" }),
+      mod("rw2", { questions: oneQ, status: "completed" }),
+      mod("math1", { questions: oneQ }),
+    ],
+    "rw2_done"
+  ),
+  "rw2_done"
+);
 
 // math1 is registered, in_progress, with its questions the instant the test
 // starts, so "in_progress with questions" alone must not read as "the student
@@ -263,6 +275,16 @@ eq(
     "math2"
   ),
   "results"
+);
+eq(
+  "all four modules completed with the 'math2_done' phase stored lands on the math2 score screen",
+  resumeScreen(
+    (["rw1", "rw2", "math1", "math2"] as const).map((k) =>
+      mod(k, { questions: oneQ, status: "completed" })
+    ),
+    "math2_done"
+  ),
+  "math2_done"
 );
 
 eq(
