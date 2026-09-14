@@ -174,9 +174,10 @@
      descriptions, "___blank" spoken-word fillers) with class="sr-only" and
      expects the class to already exist on the page. It didn't: Tailwind's JIT
      only emits classes it finds in src/, and nothing here used the name, so
-     the class was inert and that text rendered as plain visible body copy
-     ("Angle upper A upper C upper B is a right angle", "(0.3 comma 8.3)",
-     "____blank"). This is the standard visually-hidden-but-audible pattern. */
+     the class was inert. The full-test route now strips this text out of the
+     HTML server-side (see stripAccessibilityText in api/full-test/route.ts),
+     so this is just a fallback for any sr-only text that isn't run through
+     that route (or a future spot that renders raw Collegeboard HTML). */
   .sr-only {
     position: absolute;
     width: 1px;

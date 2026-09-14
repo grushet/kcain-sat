@@ -18,10 +18,9 @@ import {
   History,
   CloudOff,
   Play,
-  Flag,
+  Bookmark,
   Eye,
   EyeOff,
-  Eraser,
   Undo2,
 } from "lucide-react";
 import { estimateSectionScore, estimateSectionRange } from "@/lib/scoring";
@@ -49,6 +48,26 @@ import {
   DiffBadge,
   type ReviewGroup,
 } from "@/components/review/QuestionReview";
+
+/** Bluebook's Answer Eliminator icon: "ABC" struck through. No lucide icon for this. */
+function EliminatorIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <text
+        x="12"
+        y="16"
+        textAnchor="middle"
+        fontSize="10"
+        fontWeight="700"
+        fill="currentColor"
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+      >
+        ABC
+      </text>
+      <line x1="2" y1="12.5" x2="22" y2="12.5" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
+  );
+}
 
 // ─── Types
 
@@ -1171,7 +1190,7 @@ export default function FullTestPage() {
           <>
             {/* Module header */}
             <div className="mb-5">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between flex-wrap gap-y-2 mb-2">
                 <div className="flex items-center gap-2">
                   {isMathModule ? (
                     <Calculator className="w-4 h-4 text-amber-500" />
@@ -1182,15 +1201,46 @@ export default function FullTestPage() {
                     {moduleLabel()}
                   </span>
                 </div>
+
+                {/* Mark for Review / Answer Eliminator — grouped, icon-only */}
+                <div className="flex items-center rounded border border-sat-gray-300 dark:border-sat-gray-600 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => toggleMark(currentIdx)}
+                    aria-pressed={isMarked}
+                    title={isMarked ? "Unmark for Review" : "Mark for Review"}
+                    aria-label={isMarked ? "Unmark for Review" : "Mark for Review"}
+                    className={`p-1.5 transition-colors ${
+                      isMarked
+                        ? "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300"
+                        : "text-sat-gray-500 dark:text-sat-gray-400 hover:bg-sat-gray-100 dark:hover:bg-sat-gray-700"
+                    }`}
+                  >
+                    <Bookmark className={`w-4 h-4 ${isMarked ? "fill-amber-500" : ""}`} />
+                  </button>
+                  {isMCQ && currentQ.answerOptions && (
+                    <button
+                      type="button"
+                      onClick={() => setEliminatorOn((v) => !v)}
+                      aria-pressed={eliminatorOn}
+                      title={eliminatorOn ? "Turn off Answer Eliminator" : "Turn on Answer Eliminator"}
+                      aria-label={eliminatorOn ? "Turn off Answer Eliminator" : "Turn on Answer Eliminator"}
+                      className={`p-1.5 border-l border-sat-gray-300 dark:border-sat-gray-600 transition-colors ${
+                        eliminatorOn
+                          ? "bg-sat-primary/10 text-sat-primary"
+                          : "text-sat-gray-500 dark:text-sat-gray-400 hover:bg-sat-gray-100 dark:hover:bg-sat-gray-700"
+                      }`}
+                    >
+                      <EliminatorIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2">
                   <DiffBadge d={currentQ.difficulty} />
                   {secondsLeft !== null && (
                     <div className="flex items-center gap-1">
-                      {hideTimer && !timerForceShown ? (
-                        <span className="text-xs font-medium px-2 py-1 rounded-md bg-sat-gray-100 dark:bg-sat-gray-700 text-sat-gray-500 dark:text-sat-gray-400">
-                          Timer hidden
-                        </span>
-                      ) : (
+                      {hideTimer && !timerForceShown ? null : (
                         <span
                           className={`text-sm font-semibold tabular-nums px-2 py-0.5 rounded-md ${
                             timerForceShown
@@ -1248,24 +1298,6 @@ export default function FullTestPage() {
 
                 {/* Question card */}
                 <div className="card p-6 md:p-8">
-                  {/* Mark for Review */}
-                  <div className="flex items-center justify-end mb-4">
-                    <button
-                      type="button"
-                      onClick={() => toggleMark(currentIdx)}
-                      className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
-                        isMarked
-                          ? "border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                          : "border-sat-gray-200 dark:border-sat-gray-600 text-sat-gray-500 dark:text-sat-gray-400 hover:border-amber-300"
-                      }`}
-                    >
-                      <Flag
-                        className={`w-3.5 h-3.5 ${isMarked ? "fill-amber-500 text-amber-500" : ""}`}
-                      />
-                      {isMarked ? "Marked for Review" : "Mark for Review"}
-                    </button>
-                  </div>
-
                   {/* Stem */}
                   <div
                     className="text-sat-gray-900 dark:text-white mb-6 leading-relaxed [&_p]:mb-3 [&_strong]:font-semibold [&_em]:italic [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-sat-gray-200 [&_td]:p-2 [&_td]:text-sm [&_th]:border [&_th]:border-sat-gray-200 [&_th]:p-2 [&_th]:text-sm [&_th]:bg-sat-gray-50 dark:[&_th]:bg-sat-gray-700 [&_img]:max-w-full [&_img]:h-auto"
@@ -1275,20 +1307,6 @@ export default function FullTestPage() {
                   {/* MCQ Options */}
                   {isMCQ && currentQ.answerOptions && (
                     <>
-                      <div className="flex items-center justify-end mb-2">
-                        <button
-                          type="button"
-                          onClick={() => setEliminatorOn((v) => !v)}
-                          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
-                            eliminatorOn
-                              ? "border-sat-primary bg-sat-primary/10 text-sat-primary"
-                              : "border-sat-gray-200 dark:border-sat-gray-600 text-sat-gray-500 dark:text-sat-gray-400"
-                          }`}
-                        >
-                          <Eraser className="w-3.5 h-3.5" />
-                          Eliminator {eliminatorOn ? "On" : "Off"}
-                        </button>
-                      </div>
                       <div className="space-y-2.5 mb-6">
                         {currentQ.answerOptions.map((opt) => {
                           const isSelected = answers[currentIdx] === opt.key;

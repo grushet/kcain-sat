@@ -1,6 +1,6 @@
 "use client";
 
-import { Flag, X } from "lucide-react";
+import { Bookmark, X } from "lucide-react";
 
 export interface QuestionStatus {
   answered: boolean;
@@ -9,7 +9,7 @@ export interface QuestionStatus {
 
 /**
  * The numbered grid Bluebook calls the "Question Menu": answered questions
- * fill in, marked ones carry a flag, and any cell jumps straight to that
+ * fill in, marked ones carry a bookmark, and any cell jumps straight to that
  * question. Used both as a mid-module popover and, unmodified, as the body of
  * the end-of-module review screen.
  */
@@ -44,7 +44,7 @@ export function QuestionMenuGrid({
         >
           {i + 1}
           {s.marked && (
-            <Flag className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+            <Bookmark className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 text-amber-500 fill-amber-500" />
           )}
         </button>
       ))}
@@ -64,7 +64,7 @@ export function QuestionMenuLegend() {
         Unanswered
       </span>
       <span className="flex items-center gap-1.5">
-        <Flag className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+        <Bookmark className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
         Marked for review
       </span>
     </div>

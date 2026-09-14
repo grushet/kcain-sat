@@ -218,9 +218,51 @@ function sanitiseHtml(html: string): string {
     );
 }
 
+// ── Accessibility text ────────────────────────────────────────────────────
+// Collegeboard writes its own screen-reader-only text straight into the
+// question HTML with class="sr-only" (e.g. a fill-in-the-blank sentence is
+// `<span aria-hidden="true">______</span><span class="sr-only">blank</span>`,
+// and every figure carries a `<div class="sr-only">` "long description" list
+// of the plotted points). It expects that class to already be defined by the
+// host page's CSS. Rather than depend on a stylesheet rule to keep this text
+// invisible, strip it out of the HTML itself so a sighted student can never
+// see "______blank" or a wall of alt-text points mixed into the question.
+// Figures keep their description — moved onto a `title` attribute so hovering
+// the graph still surfaces it, without it reading as part of the problem.
+
+function textOf(html: string): string {
+  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function stripAccessibilityText(html: string): string {
+  if (!html || !html.includes("sr-only")) return html;
+  let out = html;
+
+  // A figure's sr-only "long description" becomes the figure's title, so it
+  // still reaches sighted students, just on hover instead of inline.
+  out = out.replace(
+    /(<figure\b[^>]*)(>)([\s\S]*?)<(div|span)[^>]*class="[^"]*\bsr-only\b[^"]*"[^>]*>([\s\S]*?)<\/\4>([\s\S]*?)<\/figure>/gi,
+    (_all, openAttrs, gt, before, _tag, desc, after) => {
+      const text = textOf(desc);
+      const attr = text ? ` title="${text.replace(/"/g, "&quot;")}"` : "";
+      return `${openAttrs}${attr}${gt}${before}${after}</figure>`;
+    }
+  );
+
+  // Anything else marked sr-only (the "blank" spoken-word filler, stray
+  // long-descriptions not wrapped in a <figure>) has no sighted-user
+  // equivalent, so it is simply dropped.
+  out = out.replace(
+    /<(span|div)\b[^>]*class="[^"]*\bsr-only\b[^"]*"[^>]*>[\s\S]*?<\/\1>/gi,
+    ""
+  );
+
+  return out;
+}
+
 /** Everything Collegeboard sends goes through the same clean-up. */
 function prepareHtml(html: string): string {
-  return sanitiseHtml(expandMfenced(html));
+  return sanitiseHtml(stripAccessibilityText(expandMfenced(html)));
 }
 
 // ── Normalisation ─────────────────────────────────────────────────────────
