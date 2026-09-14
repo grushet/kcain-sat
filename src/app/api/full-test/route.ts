@@ -260,9 +260,39 @@ function stripAccessibilityText(html: string): string {
   return out;
 }
 
+// ── Fill-in-the-blank marker ──────────────────────────────────────────────
+// The visible half of a blank is `<span aria-hidden="true">______</span>` —
+// literal underscore characters. Rendered as text they take on whatever the
+// page's body font does with a run of underscores (often heavier and lower
+// than the surrounding line, not a clean rule). Swapping it for a CSS-drawn
+// box sized in em units guarantees the same blank in every font.
+function fixBlankFillers(html: string): string {
+  if (!html || !html.includes('aria-hidden="true"')) return html;
+  return html.replace(
+    /<span aria-hidden="true">_{2,}<\/span>/g,
+    '<span class="qbank-blank" aria-hidden="true"></span>'
+  );
+}
+
+// ── Bare-symbol MathML operators ──────────────────────────────────────────
+// Collegeboard represents "$35" and "15%" as <mo>$</mo><mn>35</mn> and
+// <mn>15</mn><mo>%</mo>. $ and % aren't in the MathML operator dictionary the
+// way +/-/= are, so the browser falls back to default operator spacing on
+// them and a gap appears on the number side ("$ 35", "15 %"). Pin both sides
+// to zero so they sit flush against the number, as they're meant to.
+function fixSymbolSpacing(html: string): string {
+  if (!html) return html;
+  return html.replace(
+    /<mo>([$%])<\/mo>/g,
+    '<mo lspace="0" rspace="0">$1</mo>'
+  );
+}
+
 /** Everything Collegeboard sends goes through the same clean-up. */
 function prepareHtml(html: string): string {
-  return sanitiseHtml(stripAccessibilityText(expandMfenced(html)));
+  return fixSymbolSpacing(
+    fixBlankFillers(sanitiseHtml(stripAccessibilityText(expandMfenced(html))))
+  );
 }
 
 // ── Normalisation ─────────────────────────────────────────────────────────

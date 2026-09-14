@@ -29,6 +29,17 @@
     @apply font-display font-bold;
   }
 
+  /* Collegeboard question HTML embeds real <math> (MathML) for every
+     equation. `body`'s font-family inherits down into it same as anything
+     else, but stretchy operators like the √ in <msqrt> need an actual math
+     font (glyph variants, an OpenType MATH table) to size and place
+     correctly — DM Sans has none, so the radical rendered squashed and
+     misaligned. `font-family: math` tells the browser to use its own math
+     font for this subtree instead of what it inherited. */
+  math {
+    font-family: math;
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: var(--bg-surface); }
@@ -188,6 +199,21 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+  }
+
+  /* ─── Fill-in-the-blank marker ───
+     Collegeboard's own visible blank is a run of literal underscore
+     characters (`<span aria-hidden="true">______</span>`), and text
+     underscores render however the body font happens to draw them — often
+     thicker and lower than the surrounding line. api/full-test/route.ts
+     swaps that span's content for this class instead, so the blank is a
+     plain CSS rule sized off the current text, in every font. */
+  .qbank-blank {
+    display: inline-block;
+    width: 2.75em;
+    margin: 0 0.15em;
+    vertical-align: -0.15em;
+    border-bottom: 0.08em solid currentColor;
   }
 
   /* ─── Grid & dots backgrounds ─── */
