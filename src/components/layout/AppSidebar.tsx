@@ -18,9 +18,10 @@ import {
   CheckSquare,
   ExternalLink,
   Trash2,
+  ShieldCheck,
 } from "lucide-react";
 import { KcainLogo } from "./KcainLogo";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -43,6 +44,15 @@ export function AppSidebar() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/admin/whoami")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setIsAdmin(Boolean(d?.isAdmin)))
+      .catch(() => {});
+  }, [session]);
 
   async function handleDeleteAccount() {
     if (deleteConfirmText !== "DELETE") return;
@@ -125,6 +135,30 @@ export function AppSidebar() {
           <span className="flex-1">Tasks</span>
           <ExternalLink className="w-3 h-3 shrink-0 opacity-40" aria-hidden />
         </a>
+
+        {isAdmin && (
+          <Link
+            href="/admin"
+            onClick={() => setMobileOpen(false)}
+            className={clsx(
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+              isActive("/admin")
+                ? [
+                    "bg-black text-white",
+                    "dark:bg-blue-600/25 dark:text-blue-300 dark:border dark:border-blue-500/30",
+                    "shadow-[0_1px_6px_rgba(0,0,0,0.15)]",
+                    "dark:shadow-[0_1px_8px_rgba(37,99,235,0.18)]",
+                  ]
+                : [
+                    "text-black/62 hover:text-black hover:bg-black/5",
+                    "dark:text-sat-mist dark:hover:text-sat-frost dark:hover:bg-white/5",
+                  ]
+            )}
+          >
+            <ShieldCheck className="w-4.5 h-4.5 shrink-0 opacity-65" />
+            Admin
+          </Link>
+        )}
       </nav>
 
       {/* Bottom section */}
