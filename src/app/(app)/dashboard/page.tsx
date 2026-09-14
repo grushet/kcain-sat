@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { ProgressTracker } from "@/components/dashboard/ProgressTracker";
+import { Skeleton } from "@/components/Skeleton";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { BookOpen, Target, ArrowRight, Trophy, Zap, Lightbulb, Clock, ChevronRight, Star, FileQuestion, History } from "lucide-react";
@@ -22,7 +23,9 @@ const SAT_TIPS = [
 ];
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
+  const [progressLoaded, setProgressLoaded] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [progress, setProgress] = useState({
     totalXP: 0,
     level: levelFromXP(0) as LevelInfo,
@@ -49,7 +52,8 @@ export default function DashboardPage() {
     fetch("/api/progress")
       .then((r) => r.json())
       .then(setProgress)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setProgressLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -64,7 +68,8 @@ export default function DashboardPage() {
         setTestCount(done.length);
         setLastTest(done[0] ?? null);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setHistoryLoaded(true));
   }, []);
 
   const name = session?.user?.name || session?.user?.email?.split("@")[0] || "there";
@@ -94,79 +99,121 @@ export default function DashboardPage() {
     >
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <h1 className="text-2xl md:text-3xl font-display font-bold mb-1 text-sat-gray-900 dark:text-white">
-          Welcome back, {name}
-        </h1>
+        {sessionStatus === "loading" ? (
+          <Skeleton className="h-8 w-72 mb-2" />
+        ) : (
+          <h1 className="text-2xl md:text-3xl font-display font-bold mb-1 text-sat-gray-900 dark:text-white">
+            Welcome back, {name}
+          </h1>
+        )}
         <p className="text-sat-gray-600 dark:text-sat-gray-400 text-base">Track progress, build streaks, and complete your learning path.</p>
       </motion.div>
 
       {/* Progress tracker */}
       <motion.div className="mb-8 mt-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <ProgressTracker
-          xp={progress.totalXP}
-          level={progress.level}
-          streak={progress.streak.current}
-          longestStreak={progress.streak.longest}
-          streakAtRisk={progress.streakAtRisk}
-          dailyGoal={progress.dailyGoal}
-        />
+        {progressLoaded ? (
+          <ProgressTracker
+            xp={progress.totalXP}
+            level={progress.level}
+            streak={progress.streak.current}
+            longestStreak={progress.streak.longest}
+            streakAtRisk={progress.streakAtRisk}
+            dailyGoal={progress.dailyGoal}
+          />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="card p-4">
+                <Skeleton className="w-10 h-10 rounded-xl mb-3" />
+                <Skeleton className="h-3 w-16 mb-2" />
+                <Skeleton className="h-6 w-20 mb-2" />
+                <Skeleton className="h-3 w-24 mb-3" />
+                <Skeleton className="h-2 w-full rounded-full" />
+              </div>
+            ))}
+          </div>
+        )}
       </motion.div>
 
       {/* Stats row */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-sky-500 dark:bg-sky-600 flex items-center justify-center">
-              <Star className="w-4 h-4 text-white" />
+      {progressLoaded ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 rounded-lg bg-sky-500 dark:bg-sky-600 flex items-center justify-center">
+                <Star className="w-4 h-4 text-white" />
+              </div>
+              <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Lessons</h3>
             </div>
-            <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Lessons</h3>
-          </div>
-          <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
-            <motion.div className="h-full bg-sky-500 dark:bg-sky-600" initial={{ width: 0 }} animate={{ width: `${totalPercent}%` }} transition={{ duration: 0.8 }} />
-          </div>
-          <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{lessonsCompleted}/{TOTAL_LESSONS} done</p>
-        </motion.div>
-        <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-sky-500 dark:bg-sky-600 flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-white" />
+            <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-sky-500 dark:bg-sky-600" initial={{ width: 0 }} animate={{ width: `${totalPercent}%` }} transition={{ duration: 0.8 }} />
             </div>
-            <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Math</h3>
-          </div>
-          <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
-            <motion.div className="h-full bg-sky-500 dark:bg-sky-600" initial={{ width: 0 }} animate={{ width: `${mathPercent}%` }} transition={{ duration: 0.8 }} />
-          </div>
-          <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{progress.mathCompleted}/{MATH_LESSON_IDS.length} · {mathPercent}%</p>
-        </motion.div>
-        <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }}>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-sky-500 dark:bg-sky-600 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
+            <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{lessonsCompleted}/{TOTAL_LESSONS} done</p>
+          </motion.div>
+          <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 rounded-lg bg-sky-500 dark:bg-sky-600 flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-white" />
+              </div>
+              <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Math</h3>
             </div>
-            <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Reading</h3>
-          </div>
-          <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
-            <motion.div className="h-full bg-sky-500 dark:bg-sky-600" initial={{ width: 0 }} animate={{ width: `${readingPercent}%` }} transition={{ duration: 0.8 }} />
-          </div>
-          <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{progress.readingCompleted}/{READING_LESSON_IDS.length} · {readingPercent}%</p>
-        </motion.div>
-        <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-lg bg-amber-500 dark:bg-amber-600 flex items-center justify-center">
-              <Trophy className="w-4 h-4 text-white" />
+            <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-sky-500 dark:bg-sky-600" initial={{ width: 0 }} animate={{ width: `${mathPercent}%` }} transition={{ duration: 0.8 }} />
             </div>
-            <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Overall</h3>
-          </div>
-          <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
-            <motion.div className="h-full bg-amber-500 dark:bg-amber-600" initial={{ width: 0 }} animate={{ width: `${totalPercent}%` }} transition={{ duration: 0.8 }} />
-          </div>
-          <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{lessonsCompleted}/{TOTAL_LESSONS} · {totalPercent}%</p>
-        </motion.div>
-      </div>
+            <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{progress.mathCompleted}/{MATH_LESSON_IDS.length} · {mathPercent}%</p>
+          </motion.div>
+          <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 rounded-lg bg-sky-500 dark:bg-sky-600 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Reading</h3>
+            </div>
+            <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-sky-500 dark:bg-sky-600" initial={{ width: 0 }} animate={{ width: `${readingPercent}%` }} transition={{ duration: 0.8 }} />
+            </div>
+            <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{progress.readingCompleted}/{READING_LESSON_IDS.length} · {readingPercent}%</p>
+          </motion.div>
+          <motion.div className="card p-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 rounded-lg bg-amber-500 dark:bg-amber-600 flex items-center justify-center">
+                <Trophy className="w-4 h-4 text-white" />
+              </div>
+              <h3 className="font-display font-bold text-sat-gray-900 dark:text-white text-sm">Overall</h3>
+            </div>
+            <div className="h-1.5 bg-sat-gray-200 dark:bg-sat-gray-700 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-amber-500 dark:bg-amber-600" initial={{ width: 0 }} animate={{ width: `${totalPercent}%` }} transition={{ duration: 0.8 }} />
+            </div>
+            <p className="text-xs text-sat-gray-600 dark:text-sat-gray-400 mt-1">{lessonsCompleted}/{TOTAL_LESSONS} · {totalPercent}%</p>
+          </motion.div>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Skeleton className="w-9 h-9 rounded-lg" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <Skeleton className="h-1.5 w-full rounded-full mb-2" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Latest full-test score */}
       <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
-        {lastTest ? (
+        {!historyLoaded ? (
+          <div className="card p-5 flex items-center gap-4">
+            <Skeleton className="w-12 h-12 rounded-xl shrink-0" />
+            <div className="min-w-0 flex-1">
+              <Skeleton className="h-3 w-32 mb-2" />
+              <Skeleton className="h-7 w-24 mb-2" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+          </div>
+        ) : lastTest ? (
           <Link href={`/history/${lastTest.id}`} className="block">
             <div className="card p-5 hover:bg-sat-gray-50 dark:hover:bg-sat-gray-700/40 transition-colors">
               <div className="flex items-center gap-4">
@@ -219,7 +266,16 @@ export default function DashboardPage() {
             <Clock className="w-4 h-4 text-sat-gray-500 dark:text-sat-gray-400" />
             Recent Activity
           </h2>
-          {progress.lastCompleted.length > 0 ? (
+          {!progressLoaded ? (
+            <ul className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <li key={i} className="flex items-center gap-3 py-2 border-b border-sat-gray-100 dark:border-sat-gray-700 last:border-0">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <Skeleton className="h-4 w-40" />
+                </li>
+              ))}
+            </ul>
+          ) : progress.lastCompleted.length > 0 ? (
             <ul className="space-y-3">
               {progress.lastCompleted.map((item, i) => (
                 <li key={i} className="flex items-center gap-3 py-2 border-b border-sat-gray-100 dark:border-sat-gray-700 last:border-0">
@@ -245,7 +301,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Next lesson CTA */}
-      {nextLesson && (
+      {!progressLoaded ? (
+        <div className="mb-8 card p-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+            <div className="flex-1">
+              <Skeleton className="h-3 w-20 mb-2" />
+              <Skeleton className="h-5 w-48 mb-2" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        </div>
+      ) : nextLesson && (
         <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.39 }}>
           <Link href={`/learn/${nextLessonId}`} className="block">
             <div className="card p-4 border border-sky-200 dark:border-sky-800 bg-sky-50/50 dark:bg-sky-950/30 hover:bg-sky-100/50 dark:hover:bg-sky-900/30 transition-colors group">

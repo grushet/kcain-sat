@@ -7,12 +7,12 @@ import {
   History as HistoryIcon,
   Trophy,
   ChevronRight,
-  Loader2,
   Target,
   TrendingUp,
   Play,
 } from "lucide-react";
 import { ScoreTrend, type TrendPoint } from "@/components/history/ScoreTrend";
+import { Skeleton } from "@/components/Skeleton";
 
 interface HistoryAttempt {
   id: string;
@@ -102,9 +102,39 @@ export default function HistoryPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
-        <Loader2 className="w-8 h-8 text-sat-primary animate-spin" />
-        <p className="text-sat-gray-500 dark:text-sat-gray-400 text-sm">Loading your results…</p>
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 rounded-xl bg-sat-primary/10 text-sat-primary">
+            <HistoryIcon className="w-6 h-6" />
+          </div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-sat-gray-900 dark:text-white">
+            Your Results
+          </h1>
+        </div>
+        <p className="text-sat-gray-600 dark:text-sat-gray-400 mb-8">
+          Every test and practice run you have taken, with the exact questions you missed.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="card p-5">
+              <Skeleton className="h-3 w-20 mb-2" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="card p-4 flex items-center gap-4">
+              <Skeleton className="w-12 h-12 rounded-xl shrink-0" />
+              <div className="min-w-0 flex-1">
+                <Skeleton className="h-5 w-24 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

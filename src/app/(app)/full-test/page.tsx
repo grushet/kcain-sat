@@ -26,6 +26,7 @@ import {
 import { estimateSectionScore, estimateSectionRange } from "@/lib/scoring";
 import { Calculator as DesmosCalculator } from "@/components/Calculator";
 import { ReferenceSheet } from "@/components/ReferenceSheet";
+import { Skeleton } from "@/components/Skeleton";
 import {
   QuestionMenuModal,
   type QuestionStatus,
@@ -253,6 +254,7 @@ export default function FullTestPage() {
 
   // Extended time, read from and written to the student's account settings.
   const [timeMultiplier, setTimeMultiplier] = useState<TimeMultiplier>(1);
+  const [timeMultiplierLoaded, setTimeMultiplierLoaded] = useState(false);
   useEffect(() => {
     let cancelled = false;
     fetch("/api/me")
@@ -262,6 +264,9 @@ export default function FullTestPage() {
       })
       .catch(() => {
         // Standard time is the safe default if this fails to load.
+      })
+      .finally(() => {
+        if (!cancelled) setTimeMultiplierLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -1073,22 +1078,30 @@ export default function FullTestPage() {
             <label className="block text-sm font-medium text-sat-gray-700 dark:text-sat-gray-300 mb-2">
               Timing
             </label>
-            <div className="flex flex-wrap gap-2">
-              {TIME_MULTIPLIERS.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => void handleTimeMultiplierChange(m)}
-                  className={`text-sm py-2 px-4 rounded-xl border-2 transition-colors ${
-                    timeMultiplier === m
-                      ? "border-sat-primary bg-sat-primary/10 text-sat-primary font-semibold"
-                      : "border-sat-gray-200 dark:border-sat-gray-600 text-sat-gray-600 dark:text-sat-gray-400"
-                  }`}
-                >
-                  {m === 1 ? "Standard" : m === 1.5 ? "Time and a half" : "Double time"}
-                </button>
-              ))}
-            </div>
+            {timeMultiplierLoaded ? (
+              <div className="flex flex-wrap gap-2">
+                {TIME_MULTIPLIERS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => void handleTimeMultiplierChange(m)}
+                    className={`text-sm py-2 px-4 rounded-xl border-2 transition-colors ${
+                      timeMultiplier === m
+                        ? "border-sat-primary bg-sat-primary/10 text-sat-primary font-semibold"
+                        : "border-sat-gray-200 dark:border-sat-gray-600 text-sat-gray-600 dark:text-sat-gray-400"
+                    }`}
+                  >
+                    {m === 1 ? "Standard" : m === 1.5 ? "Time and a half" : "Double time"}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-9 w-24 rounded-xl" />
+                <Skeleton className="h-9 w-36 rounded-xl" />
+                <Skeleton className="h-9 w-32 rounded-xl" />
+              </div>
+            )}
           </div>
 
           <motion.button
