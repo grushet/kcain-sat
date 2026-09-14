@@ -25,7 +25,7 @@ const FEATURES = [
     subtitle: "Navigate to 1600",
     description:
       "A visual skill tree maps every lesson. Math and Reading tracks unlock sequentially, so you always know your next step.",
-    stat: "24+",
+    stat: "82",
     statLabel: "lessons",
   },
   {
@@ -125,9 +125,9 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}
             >
-              Math meets
+              Improve your
               <br />
-              <span className="shimmer-text">Reading.</span>
+              <span className="shimmer-text">SAT score.</span>
               <br />
               <span
                 className="block mt-2 font-normal text-white/35"
@@ -164,7 +164,7 @@ export default function LandingPage() {
                   }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  Get Started Free
+                  Get Started
                   <ArrowRight className="w-5 h-5" />
                 </motion.span>
               </Link>
@@ -188,8 +188,8 @@ export default function LandingPage() {
             >
               {[
                 { val: "500+", lbl: "practice questions" },
-                { val: "24+", lbl: "structured lessons" },
-                { val: "Free", lbl: "to get started" },
+                { val: "82", lbl: "structured lessons" },
+                { val: "Unlimited", lbl: "mock SAT" },
               ].map(({ val, lbl }) => (
                 <div key={lbl} className="flex flex-col gap-0.5">
                   <span className="text-2xl font-display font-bold text-white">
@@ -206,7 +206,7 @@ export default function LandingPage() {
 
         {/* Scroll nudge */}
         <motion.div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/28 text-[10px] tracking-[0.2em] uppercase select-none"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/60 text-[10px] tracking-[0.2em] uppercase select-none"
           animate={{ y: [0, 7, 0] }}
           transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
         >
@@ -321,7 +321,7 @@ export default function LandingPage() {
                 width: `${FEATURES.length * 100}%`,
               }}
             >
-              {FEATURES.map(({ icon: Icon, title, subtitle, description }, i) => (
+              {FEATURES.map(({ icon: Icon, title, subtitle }, i) => (
                 <div
                   key={title}
                   className="h-full flex items-center pr-20"
@@ -352,12 +352,9 @@ export default function LandingPage() {
                         <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white/35 mb-2">
                           {subtitle}
                         </p>
-                        <h3 className="text-3xl lg:text-5xl font-display font-bold text-white mb-5 leading-tight">
+                        <h3 className="text-3xl lg:text-5xl font-display font-bold text-white leading-tight">
                           {title}
                         </h3>
-                        <p className="text-white/52 text-base lg:text-lg leading-relaxed max-w-md">
-                          {description}
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -377,7 +374,7 @@ export default function LandingPage() {
           Why cain works
         </h2>
         <div className="space-y-6">
-          {FEATURES.map(({ icon: Icon, title, subtitle, description, stat, statLabel }, i) => (
+          {FEATURES.map(({ icon: Icon, title, subtitle, stat, statLabel }, i) => (
             <motion.div
               key={title}
               className="card card-glow p-6"
@@ -397,10 +394,7 @@ export default function LandingPage() {
                   <h3 className="text-xl font-display font-bold text-black dark:text-sat-frost mb-2">
                     {title}
                   </h3>
-                  <p className="text-black/52 dark:text-sat-mist text-sm leading-relaxed">
-                    {description}
-                  </p>
-                  <div className="mt-3 inline-flex items-baseline gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/7 dark:border-white/8">
+                  <div className="mt-1 inline-flex items-baseline gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/7 dark:border-white/8">
                     <span className="font-bold text-black dark:text-sat-frost">{stat}</span>
                     <span className="text-[10px] text-black/40 dark:text-sat-mist uppercase tracking-wider">
                       {statLabel}
