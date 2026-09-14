@@ -10,7 +10,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** Signup counts and a recent-user list, for the /admin page. Gated by isCurrentUserAdmin. */
 export async function GET() {
   if (!(await isCurrentUserAdmin())) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // 404, not 403 -- a non-admin probing this route directly shouldn't be
+    // able to tell it exists, matching /admin's own not-found behavior.
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const now = Date.now();
