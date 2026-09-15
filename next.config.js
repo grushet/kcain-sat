@@ -35,4 +35,7 @@ module.exports = withSentryConfig(nextConfig, {
   silent: true,
   widenClientFileUpload: false,
   webpack: { treeshake: { removeDebugLogging: true } },
+  // Proxies browser->Sentry traffic through our own domain so ad blockers and
+  // tracking-protection lists (which target sentry.io directly) can't drop it.
+  tunnelRoute: "/monitoring",
 });
