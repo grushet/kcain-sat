@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Check, X, History, Zap, Eraser, Undo2 } from "lucide-react";
+import { ArrowLeft, Check, X, History, Zap, Undo2 } from "lucide-react";
 import { getQuestionsByTopic } from "@/lib/questions";
 import type { PracticeBankQuestion } from "@/lib/questions";
 import { mathStr } from "@/components/MathText";
@@ -23,6 +23,26 @@ function shuffle<T>(arr: T[]): T[] {
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
+}
+
+/** Bluebook's Answer Eliminator icon: "ABC" struck through. No lucide icon for this. */
+function EliminatorIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <text
+        x="12"
+        y="16"
+        textAnchor="middle"
+        fontSize="10"
+        fontWeight="700"
+        fill="currentColor"
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+      >
+        ABC
+      </text>
+      <line x1="2" y1="12.5" x2="22" y2="12.5" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
+  );
 }
 
 /** Get a new random set of questions every time: shuffle pool, take up to N, then order by difficulty. */
@@ -325,14 +345,16 @@ export default function PracticeTopicPage() {
               <button
                 type="button"
                 onClick={() => setEliminatorOn((v) => !v)}
-                className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors flex-shrink-0 ${
+                aria-pressed={eliminatorOn}
+                title={eliminatorOn ? "Turn off Answer Eliminator" : "Turn on Answer Eliminator"}
+                aria-label={eliminatorOn ? "Turn off Answer Eliminator" : "Turn on Answer Eliminator"}
+                className={`p-1.5 rounded border transition-colors flex-shrink-0 ${
                   eliminatorOn
                     ? "border-sat-primary bg-sat-primary/10 text-sat-primary"
-                    : "border-sat-gray-200 dark:border-sat-gray-600 text-sat-gray-500 dark:text-sat-gray-400"
+                    : "border-sat-gray-200 dark:border-sat-gray-600 text-sat-gray-500 dark:text-sat-gray-400 hover:bg-sat-gray-100 dark:hover:bg-sat-gray-700"
                 }`}
               >
-                <Eraser className="w-3.5 h-3.5" />
-                Eliminator {eliminatorOn ? "On" : "Off"}
+                <EliminatorIcon className="w-4 h-4" />
               </button>
             )}
           </div>
