@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth";
 import { isEmailAuthEnabled } from "@/lib/email-auth";
 import { SESSION_COOKIE_DOMAIN, SESSION_COOKIE_NAME } from "@/lib/session-cookie";
+import { touchLastActive } from "@/lib/last-active";
 
 /**
  * Only registered while email auth is switched on. With no mail provider
@@ -152,6 +153,13 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) (session.user as { id?: string }).id = token.id as string;
+      // Runs on effectively every signed-in request from both apps, so this
+      // is the one seam that covers "loaded the app" for cainsat.org and the
+      // planner alike without touching either client. touchLastActive is the
+      // one doing the throttling.
+      if (token.id) {
+        await touchLastActive(token.id as string);
+      }
       return session;
     },
     async redirect({ url, baseUrl }) {

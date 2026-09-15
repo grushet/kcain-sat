@@ -23,6 +23,12 @@ model User {
   timeMultiplier Float     @default(1) // Extended time on the full test: 1, 1.5, or 2
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  /// Last time this user was seen signed in, across both apps. Null for anyone
+  /// who signed up before this column existed -- never backfilled, since we
+  /// have no real data for when they were last active. Written from the
+  /// NextAuth `session` callback (see touchLastActive in lib/last-active.ts),
+  /// throttled to once per hour so it isn't a write on every request.
+  lastActiveAt   DateTime?
 
   accounts          Account[]
   sessions          Session[]
